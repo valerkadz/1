@@ -1,0 +1,1315 @@
+<title>Цветокор с нуля</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: длинная страница-учебник; уроки идут по порядку, в уроке 4 — широкая «лаборатория» с вьюером и скопами, как в монтажной. */
+:root{
+  --bg:#e9ebee; --surface:#f6f7f8; --surface2:#dfe3e7; --ink:#15181c; --muted:#58606a; --line:#c9ced5;
+  --accent:#b8600c; --accent-ink:#ffffff; --teal:#0b7a80; --good:#227a3d; --bad:#b3261e;
+  --scope:#0c0e11; --scope-line:#2b3038; --scope-ink:#8f98a3;
+  --f-display:"Unbounded", "Golos Text", system-ui, sans-serif;
+  --f-body:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --navh:56px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141619; --surface:#1d2024; --surface2:#262a30; --ink:#e7e9ec; --muted:#9aa2ac; --line:#323740;
+  --accent:#f0a14a; --accent-ink:#1a1206; --teal:#4cc2c8; --good:#5fcf7f; --bad:#ff7b72; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#141619; --surface:#1d2024; --surface2:#262a30; --ink:#e7e9ec; --muted:#9aa2ac; --line:#323740;
+  --accent:#f0a14a; --accent-ink:#1a1206; --teal:#4cc2c8; --good:#5fcf7f; --bad:#ff7b72; color-scheme:dark }
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:calc(var(--navh) + 16px)}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:17px; line-height:1.6;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:0 48px}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top, 0px); z-index:10; background:var(--bg)}
+a{color:var(--teal)}
+h1,h2,h3{font-family:var(--f-display); text-wrap:balance; line-height:1.15; margin:0}
+h2{font-size:clamp(26px,4.2vw,38px); font-weight:700}
+h3{font-size:19px; font-weight:500; margin-top:8px}
+p{margin:0}
+code,.mono{font-family:var(--f-mono); font-size:.88em}
+.wrap{max-width:1180px; margin:0 auto}
+.text{max-width:720px}
+.stack{display:flex; flex-direction:column; gap:14px}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent)}
+
+/* nav */
+.nav{position:sticky; top:env(safe-area-inset-top, 0px); z-index:9; background:var(--bg); border-bottom:1px solid var(--line);
+  margin-inline:calc(-1 * max(16px, env(safe-area-inset-left, 0px))) calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.nav .wrap{display:flex; gap:6px; align-items:center; height:var(--navh); overflow-x:auto; scrollbar-width:none}
+.nav .wrap::-webkit-scrollbar{display:none}
+.nav a{flex:none; text-decoration:none; color:var(--muted); font-size:14px; padding:6px 11px; border-radius:999px; white-space:nowrap; font-weight:500}
+.nav a:hover,.nav a:focus-visible{color:var(--ink); background:var(--surface2); outline:none}
+.nav a b{font-family:var(--f-mono); color:var(--accent); font-weight:600; margin-right:4px}
+.nav .lab-link{color:var(--accent-ink); background:var(--accent)}
+.nav .lab-link:hover{background:var(--accent); color:var(--accent-ink); filter:brightness(1.08)}
+
+/* hero */
+.hero{padding-block:44px 28px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:36px; align-items:center}
+.hero h1{font-size:clamp(34px,6vw,64px); font-weight:700; letter-spacing:-.01em}
+.hero h1 span{color:var(--accent)}
+.hero .lead{font-size:19px; color:var(--muted); max-width:520px}
+@media (max-width:860px){ .hero{grid-template-columns:minmax(0,1fr); gap:24px; padding-top:28px} }
+.wipe{position:relative; border-radius:10px; overflow:hidden; background:#000; touch-action:pan-y; cursor:ew-resize}
+.wipe canvas{display:block; width:100%; height:auto}
+.wipe .bar{position:absolute; top:0; bottom:0; width:2px; background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.3); pointer-events:none}
+.wipe .bar::after{content:"⇆"; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:34px; height:34px; border-radius:50%; background:#fff; color:#111; display:grid; place-items:center; font-size:16px}
+.wipe .tag{position:absolute; top:10px; font-family:var(--f-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; background:rgba(0,0,0,.55); color:#fff; padding:3px 8px; border-radius:4px; pointer-events:none}
+.cap{font-size:14px; color:var(--muted); margin-top:8px}
+
+/* sections */
+section.lesson{padding-block:56px 8px; border-top:1px solid var(--line)}
+.lesson-head{display:grid; grid-template-columns:auto minmax(0,1fr); gap:18px; align-items:baseline; margin-bottom:22px}
+.lesson-num{font-family:var(--f-display); font-size:clamp(46px,7vw,76px); color:var(--accent); line-height:.9; font-weight:700}
+.lesson-head p{color:var(--muted); margin-top:8px; max-width:640px}
+.cols{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px; align-items:start}
+@media (max-width:860px){ .cols{grid-template-columns:minmax(0,1fr)} }
+.block{display:flex; flex-direction:column; gap:12px; margin-top:34px}
+.callout{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent); padding:14px 16px; border-radius:6px}
+.callout.teal{border-left-color:var(--teal)}
+.callout.warn{border-left-color:var(--bad)}
+.rule{font-family:var(--f-display); font-size:20px; font-weight:500}
+ul.clean{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:6px}
+ol.steps{margin:0; padding-left:22px; display:flex; flex-direction:column; gap:6px}
+
+/* tables */
+.tbl{overflow-x:auto; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:15px; min-width:520px}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-size:12px; font-family:var(--f-mono); text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; background:var(--surface2)}
+tr:last-child td{border-bottom:none}
+td b{font-weight:600}
+
+/* demo cards */
+.demo{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px; min-width:0}
+.demo-title{font-family:var(--f-mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); font-weight:600}
+.demo canvas{display:block; width:100%; height:auto; border-radius:6px; background:#000}
+.ctrl{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; align-items:center}
+.ctrl label{font-size:14px; font-weight:500}
+.ctrl output{font-family:var(--f-mono); font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums}
+.ctrl input[type=range]{grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0}
+.readout{display:flex; flex-wrap:wrap; gap:6px}
+.pill{font-size:13px; padding:3px 9px; border-radius:999px; background:var(--surface2); color:var(--ink); font-weight:500}
+.pill.ok{background:color-mix(in srgb, var(--good) 18%, transparent); color:var(--good)}
+.pill.bad{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad)}
+.seg{display:flex; flex-wrap:wrap; gap:6px}
+.btn{font:inherit; font-size:14px; font-weight:500; border:1px solid var(--line); background:var(--surface2); color:var(--ink); padding:7px 12px; border-radius:8px; cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible,.wheel:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.btn[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn.ghost{background:transparent}
+
+/* buckets */
+.buckets{display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:6px; align-items:end; height:150px; padding-top:22px}
+.bucket{position:relative; height:110px; border:2px solid var(--muted); border-top:none; border-radius:0 0 8px 8px; overflow:visible}
+.bucket .water{position:absolute; left:0; right:0; bottom:0; background:linear-gradient(var(--teal), color-mix(in srgb, var(--teal) 60%, #003)); border-radius:0 0 5px 5px; transition:height .15s}
+.bucket.over{border-color:var(--bad)}
+.bucket.over::before{content:"перелив"; position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:10px; color:var(--bad); font-weight:700; white-space:nowrap}
+.bucket.noise::before{content:"шум"; position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:10px; color:var(--accent); font-weight:700}
+.bucket-labels{display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:6px; font-size:11px; color:var(--muted); text-align:center; line-height:1.2}
+
+/* kelvin */
+.kbar{height:16px; border-radius:4px}
+.kscale{display:flex; justify-content:space-between; font-family:var(--f-mono); font-size:11px; color:var(--muted)}
+.paper{display:grid; grid-template-columns:120px minmax(0,1fr); gap:14px; align-items:center}
+.paper-swatch{aspect-ratio:1; border-radius:6px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.15), 0 8px 18px -10px rgba(0,0,0,.5); position:relative}
+.paper-swatch::after{content:"лист бумаги"; position:absolute; bottom:6px; left:0; right:0; text-align:center; font-size:11px; color:rgba(0,0,0,.55)}
+
+/* camera screen */
+.cam{background:#0d0f12; color:#d9dde2; border-radius:14px; padding:14px; border:6px solid #23262b; font-family:var(--f-mono); font-size:13.5px}
+.cam-top{display:flex; justify-content:space-between; color:#7c8590; font-size:11px; letter-spacing:.1em; margin-bottom:8px}
+.cam-row{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:7px 10px; border-radius:4px}
+.cam-row:nth-child(odd){background:#15181c}
+.cam-row span:last-child{color:#f0a14a; text-align:right}
+
+/* diagrams */
+svg text{font-family:var(--f-body)}
+.d-ink{fill:var(--ink)} .d-muted{fill:var(--muted)} .d-acc{fill:var(--accent)} .d-teal{fill:var(--teal)} .d-surface{fill:var(--surface2)}
+.d-stroke{stroke:var(--muted)} .d-beam{fill:var(--accent); opacity:.18}
+
+/* nodes */
+.nodes{display:flex; align-items:center; gap:0; overflow-x:auto; padding:6px 2px 12px}
+.node{flex:none; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px; min-width:112px; cursor:pointer; text-align:left; font:inherit; color:var(--ink)}
+.node:hover{border-color:var(--accent)}
+.node small{display:block; font-family:var(--f-mono); color:var(--accent); font-size:11px}
+.node span{font-size:13.5px; font-weight:600}
+.node.cst{border-color:var(--teal)} .node.cst small{color:var(--teal)}
+.wire{flex:none; width:22px; height:2px; background:var(--muted); position:relative}
+.wire::after{content:""; position:absolute; right:-1px; top:-4px; border:5px solid transparent; border-left-color:var(--muted); border-right:none}
+
+/* resolve mock */
+.rmock{display:grid; gap:4px; grid-template-columns:1fr 2.4fr 1.4fr; grid-template-rows:90px 34px 70px; font-size:12px; font-weight:600}
+.rmock div{background:var(--surface2); border-radius:4px; padding:6px 8px; color:var(--muted)}
+.rmock .viewer{background:#30353c; color:#dfe3e8}
+.rmock .clips{grid-column:1 / -1}
+.rmock .wheels{grid-column:1 / 3}
+@media (max-width:520px){ .rmock{font-size:10px} }
+
+/* LAB */
+.lab{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; margin-top:28px}
+.lab-head{display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:end; margin-bottom:14px}
+.lab-head h3{font-size:24px; margin:0}
+.challenges{display:flex; gap:8px; overflow-x:auto; padding-bottom:8px}
+.ch{flex:none; font:inherit; text-align:left; border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:10px; padding:9px 12px; cursor:pointer; max-width:220px}
+.ch b{display:block; font-size:14px}
+.ch small{color:var(--muted); font-size:12px; line-height:1.3; display:block}
+.ch[aria-pressed="true"]{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
+.lab-grid{display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:18px; align-items:start; margin-top:12px}
+.lab-view{position:sticky; top:calc(var(--navh) + env(safe-area-inset-top, 0px) + 12px); display:flex; flex-direction:column; gap:10px}
+@media (max-width:920px){ .lab-grid{grid-template-columns:minmax(0,1fr)} .lab-view{position:static} }
+.viewer-box{position:relative; background:#000; border-radius:8px; overflow:hidden}
+.viewer-box canvas{display:block; width:100%; height:auto}
+.viewer-box.pick canvas{cursor:crosshair}
+.viewer-box .hint{position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.65); color:#fff; font-size:12px; padding:4px 8px; border-radius:4px; pointer-events:none}
+.task{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px}
+.task h4{margin:0; font-family:var(--f-display); font-weight:500; font-size:16px}
+.task ol{margin:0; padding-left:20px; font-size:15px}
+.fb{display:flex; flex-direction:column; gap:4px; font-size:14.5px}
+.fb div{padding:6px 10px; border-radius:6px; background:var(--surface2)}
+.fb .ok{color:var(--good); background:color-mix(in srgb, var(--good) 12%, transparent)}
+.fb .bad{color:var(--bad); background:color-mix(in srgb, var(--bad) 10%, transparent)}
+.scopes{display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:8px}
+.scope{background:var(--scope); border-radius:8px; padding:6px; display:flex; flex-direction:column; gap:4px; min-width:0}
+.scope canvas{width:100%; height:auto; display:block}
+.scope-tabs{display:flex; gap:4px}
+.scope-tabs button{font:inherit; font-size:11px; font-family:var(--f-mono); background:transparent; color:var(--scope-ink); border:1px solid var(--scope-line); border-radius:4px; padding:2px 7px; cursor:pointer}
+.scope-tabs button[aria-pressed="true"]{color:#fff; border-color:#6b7480}
+.scope-label{font-family:var(--f-mono); font-size:11px; color:var(--scope-ink)}
+.panel{display:flex; flex-direction:column; gap:10px}
+.group{border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:8px; background:var(--bg)}
+.group-h{display:flex; justify-content:space-between; align-items:center; gap:8px}
+.group-h b{font-size:14px}
+.group-h small{font-family:var(--f-mono); font-size:11px; color:var(--accent)}
+.group.cst .group-h small{color:var(--teal)}
+.switch{display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer}
+.switch input{width:18px; height:18px; accent-color:var(--accent)}
+.wheels{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+.wheel-col{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0}
+.wheel-col > b{font-size:12px; font-family:var(--f-mono); color:var(--muted)}
+.wheel{width:100%; max-width:110px; aspect-ratio:1; border-radius:50%; position:relative; touch-action:none; cursor:pointer;
+  background:radial-gradient(circle, #8a8d91 0%, rgba(138,141,145,.55) 45%, rgba(138,141,145,0) 72%), conic-gradient(#e33,#dd3,#3d3,#3dd,#33e,#d3d,#e33); box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
+.wheel .dot{position:absolute; width:14px; height:14px; border-radius:50%; background:#fff; border:2px solid #111; transform:translate(-50%,-50%); left:50%; top:50%; pointer-events:none}
+.wheel-col input{width:100%; accent-color:var(--accent)}
+.wheel-col output{font-family:var(--f-mono); font-size:11px; color:var(--muted)}
+.upload{display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:14px}
+.upload select{font:inherit; font-size:14px; padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:var(--surface2); color:var(--ink)}
+.file-btn{position:relative; overflow:hidden}
+.file-btn input{position:absolute; inset:0; opacity:0; cursor:pointer}
+
+/* checklist */
+.check{display:flex; flex-direction:column; gap:2px}
+.check label{display:flex; gap:10px; align-items:flex-start; padding:7px 10px; border-radius:6px; cursor:pointer}
+.check label:hover{background:var(--surface2)}
+.check input{width:18px; height:18px; margin-top:3px; accent-color:var(--good); flex:none}
+.check input:checked + span{color:var(--muted); text-decoration:line-through}
+
+.keys{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px}
+.key{display:flex; gap:10px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px}
+kbd{font-family:var(--f-mono); font-size:12px; background:var(--surface2); border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:1px 6px; white-space:nowrap}
+.cheat{background:var(--scope); color:#d6dbe1; border-radius:12px; padding:16px; font-family:var(--f-mono); font-size:13px; line-height:1.7; overflow-x:auto; white-space:pre}
+.cheat em{color:#f0a14a; font-style:normal}
+.goto{align-self:flex-start}
+footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--line); color:var(--muted); font-size:14px}
+</style>
+
+<nav class="nav" aria-label="Уроки">
+  <div class="wrap">
+    <a href="#urok-0"><b>0</b>Цвет</a>
+    <a href="#urok-1"><b>1</b>Камера</a>
+    <a href="#urok-2"><b>2</b>Съёмка</a>
+    <a href="#urok-3"><b>3</b>DaVinci</a>
+    <a href="#urok-4"><b>4</b>Покраска</a>
+    <a href="#urok-5"><b>5</b>Точечно</a>
+    <a href="#urok-6"><b>6</b>Кино</a>
+    <a href="#urok-7"><b>7</b>Экспорт</a>
+    <a href="#lab" class="lab-link">Лаборатория</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="stack">
+    <div class="eyebrow">Sony ZV-E10 II → DaVinci Resolve Studio</div>
+    <h1>Цветокор <span>с нуля</span></h1>
+    <p class="lead">Как снимать и как красить видео. Объясняем, как пятикласснику, и в каждом уроке даём всё потрогать руками.</p>
+    <div class="seg">
+      <a class="btn primary" href="#urok-0">Начать с урока 0</a>
+      <a class="btn" href="#lab">Сразу в лабораторию</a>
+    </div>
+  </div>
+  <div>
+    <div class="wipe" id="heroWipe">
+      <canvas id="heroCv" width="640" height="360" aria-label="Кадр: слева серый S-Log3, справа после покраски"></canvas>
+      <div class="bar" id="heroBar"></div>
+      <span class="tag" style="left:10px">S-Log3 с камеры</span>
+      <span class="tag" style="right:10px">после покраски</span>
+    </div>
+    <p class="cap">Это один и тот же кадр. Двигай шторку пальцем или мышкой. Слева так видео выходит из камеры в S-Log3. Справа его уже покрасили в DaVinci.</p>
+  </div>
+</header>
+
+<!-- ================= УРОК 0 ================= -->
+<section class="lesson" id="urok-0">
+  <div class="lesson-head">
+    <div class="lesson-num">0</div>
+    <div><h2>Как работает цвет</h2><p>Здесь нет кнопок DaVinci, только идеи. Это самый важный урок: без него остальные будут казаться магией.</p></div>
+  </div>
+
+  <div class="cols">
+    <div class="stack text">
+      <h3>Камера — это много маленьких ведёрок</h3>
+      <p>Матрица камеры состоит из миллионов крошечных ведёрок, и каждое ловит капельки света. Мало света — ведёрко почти пустое, и место на картинке тёмное. Много света — светлое.</p>
+      <p>Если света столько, что ведёрко <b>переполнилось</b>, это <b>пересвет</b>. Всё, что перелилось, потеряно навсегда: на видео будет белое пятно без деталей. А если ведёрко почти сухое, в тёмных местах появляется <b>шум</b> — мелкий «песок» на картинке.</p>
+      <div class="callout"><b>Задача на съёмке:</b> налить в ведёрки достаточно света, но так, чтобы важные не переливались.</div>
+    </div>
+    <div class="demo">
+      <div class="demo-title">Попробуй: налей света</div>
+      <div class="buckets" id="buckets"></div>
+      <div class="bucket-labels"><span>чёрная куртка</span><span>тень</span><span>волосы</span><span>трава</span><span>лицо</span><span>стена</span><span>футболка</span><span>облако</span><span>небо</span><span>солнце</span></div>
+      <div class="ctrl"><label for="bucketEv">Сколько света (экспозиция)</label><output id="bucketEvOut">0</output><input type="range" id="bucketEv" min="-4" max="3" step="0.1" value="0"></div>
+      <div class="readout" id="bucketRead"></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Треугольник экспозиции</h3>
+    <div class="cols">
+      <div class="stack text">
+        <p>Яркость картинки регулируют три вещи:</p>
+        <div class="tbl"><table>
+          <tr><th>Что</th><th>Как работает</th><th>Побочный эффект</th></tr>
+          <tr><td><b>Диафрагма</b> f/1.8 … f/16</td><td>Дырочка в объективе. Меньше число — больше дырка — больше света.</td><td>Маленькое число = размытый фон</td></tr>
+          <tr><td><b>Выдержка</b> 1/50 …</td><td>Сколько времени ведёрки ловят свет в каждом кадре.</td><td>Длинная смазывает движение</td></tr>
+          <tr><td><b>ISO</b> 800 …</td><td>Усиление сигнала, как ручка громкости.</td><td>Больше ISO = больше шума</td></tr>
+        </table></div>
+        <div class="callout"><div class="rule">Выдержка = 1 / (кадры × 2)</div>
+          <p class="muted" style="margin-top:6px">25 кадров → 1/50 · 50 кадров → 1/100 · 30 кадров → 1/60. При такой выдержке движения смазываются чуть-чуть, как в кино. На 1/1000 они станут дёргаными.</p></div>
+        <p>Если на улице слишком светло, а фон хочется размытым, надень на объектив <b>ND-фильтр</b>. Это солнечные очки для камеры. Лучше всего переменный: его крутишь — и затемнение меняется. Летом на улице в S-Log3 без него почти никак.</p>
+      </div>
+      <div class="demo">
+        <div class="demo-title">Попробуй: покрути три ручки</div>
+        <canvas id="etCv" width="480" height="270"></canvas>
+        <div class="ctrl"><label for="etF">Диафрагма</label><output id="etFOut"></output><input type="range" id="etF" min="0" max="7" step="1" value="2"></div>
+        <div class="ctrl"><label for="etS">Выдержка</label><output id="etSOut"></output><input type="range" id="etS" min="0" max="5" step="1" value="1"></div>
+        <div class="ctrl"><label for="etI">ISO</label><output id="etIOut"></output><input type="range" id="etI" min="0" max="7" step="1" value="3"></div>
+        <div class="readout" id="etRead"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Цвет света и баланс белого</h3>
+    <div class="cols">
+      <div class="stack text">
+        <p>Свет бывает разного цвета. Лампочка дома оранжевая, солнце почти белое, тень синеватая. Цвет света измеряют в <b>Кельвинах (K)</b>: маленькое число — оранжевее, большое — синее.</p>
+        <p>Мозг сам «отбеливает» цвета, а камера — нет. Ей надо <b>сказать</b>, какой сейчас свет. Это и есть <b>баланс белого</b>. Если он правильный, белая бумага на видео белая.</p>
+        <div class="callout warn"><b>Почему не «Авто»?</b> Автобаланс «плавает»: человек в синей футболке зашёл в кадр — и весь кадр поменял цвет. Красить такое очень тяжело. Ставь вручную.</div>
+      </div>
+      <div class="demo">
+        <div class="demo-title">Попробуй: подбери баланс белого</div>
+        <div class="seg" id="kLights"></div>
+        <div class="kbar" id="kBar"></div>
+        <div class="kscale"><span>2500K</span><span>4000K</span><span>5600K</span><span>7500K</span><span>10000K</span></div>
+        <div class="ctrl"><label for="kCam">Баланс белого на камере</label><output id="kCamOut"></output><input type="range" id="kCam" min="2500" max="10000" step="100" value="5600"></div>
+        <div class="paper"><div class="paper-swatch" id="kSwatch"></div><div id="kVerdict" class="stack" style="gap:6px"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Что такое Log: ингредиенты для торта</h3>
+    <div class="cols">
+      <div class="stack text">
+        <p><b>Обычный профиль</b> (как в телефоне) сам делает картинку красивой, но при этом выкидывает часть информации в самых светлых и тёмных местах. Это <b>готовый торт</b>: вкусно, но переделать нельзя.</p>
+        <p><b>S-Log3</b> сохраняет максимум информации, но выглядит серым и бледным. Это <b>ингредиенты</b>: мука, яйца, сахар. Есть нельзя, зато можно испечь что угодно. <b>Покраска</b> — это и есть «испечь торт».</p>
+        <p><b>Rec.709</b> — это «язык» обычных экранов: телефона, YouTube, телевизора. Представь, что S-Log3 — английский, а Rec.709 — русский. Зритель понимает только русский. Переводчик в DaVinci — нода <b>Color Space Transform</b>.</p>
+      </div>
+      <div class="tbl"><table>
+        <tr><th></th><th>S-Cinetone</th><th>S-Log3</th></tr>
+        <tr><td>Сразу красиво</td><td>Да</td><td>Нет, серо</td></tr>
+        <tr><td>Нужно красить</td><td>Немного</td><td>Обязательно</td></tr>
+        <tr><td>Запас для исправлений</td><td>Средний</td><td>Большой</td></tr>
+        <tr><td>Сложность съёмки</td><td>Легко</td><td>Надо правильно светить</td></tr>
+        <tr><td>Кому</td><td>Для старта</td><td>Тому, кто учится красить</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>8 бит или 10 бит</h3>
+    <div class="cols">
+      <div class="stack text">
+        <p>Битность — это сколько оттенков одного цвета записывает камера. <b>8 бит</b> — 256 оттенков, как набор из 24 фломастеров. <b>10 бит</b> — 1024 оттенка, как набор из 100 фломастеров.</p>
+        <p>Когда красишь Log, ты сильно «растягиваешь» цвета. В 8 битах на небе появятся <b>полоски-ступеньки</b> (бандинг), а в 10 битах переход останется плавным. ZV-E10 II умеет писать <b>10 бит 4:2:2</b>. Всегда снимай так.</p>
+        <p class="muted"><b>4:2:2</b> означает, что о цвете хранится больше информации, чем в 4:2:0. Это важно для покраски и масок.</p>
+      </div>
+      <div class="demo">
+        <div class="demo-title">Попробуй: растяни небо</div>
+        <div class="scope-label" style="color:var(--muted)">8 бит</div>
+        <canvas id="bit8" width="640" height="90"></canvas>
+        <div class="scope-label" style="color:var(--muted)">10 бит</div>
+        <canvas id="bit10" width="640" height="90"></canvas>
+        <div class="ctrl"><label for="bitS">Сила покраски</label><output id="bitSOut"></output><input type="range" id="bitS" min="1" max="14" step="0.5" value="8"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= УРОК 1 ================= -->
+<section class="lesson" id="urok-1">
+  <div class="lesson-head">
+    <div class="lesson-num">1</div>
+    <div><h2>Настраиваем ZV-E10 II</h2><p>Один раз всё правильно настроим, сохраним в память камеры и дальше будем просто снимать. Названия пунктов могут немного отличаться в зависимости от прошивки. Если не нашёл пункт, ищи похожий по смыслу.</p></div>
+  </div>
+  <div class="cols">
+    <div class="cam" aria-label="Шпаргалка настроек камеры">
+      <div class="cam-top"><span>НАСТРОЙКИ ДЛЯ LOG</span><span>MR 1</span></div>
+      <div class="cam-row"><span>Режим</span><span>Видео · M</span></div>
+      <div class="cam-row"><span>Формат файла</span><span>XAVC S 4K</span></div>
+      <div class="cam-row"><span>Настр. записи</span><span>25p · 4:2:2 10bit</span></div>
+      <div class="cam-row"><span>Профиль изобр.</span><span>PP9</span></div>
+      <div class="cam-row"><span>  Гамма</span><span>S-Log3</span></div>
+      <div class="cam-row"><span>  Цвет. режим</span><span>S-Gamut3.Cine</span></div>
+      <div class="cam-row"><span>Помощь отобр. гаммы</span><span>Вкл</span></div>
+      <div class="cam-row"><span>ISO</span><span>800</span></div>
+      <div class="cam-row"><span>Выдержка</span><span>1/50</span></div>
+      <div class="cam-row"><span>Баланс белого</span><span>Вручную, K</span></div>
+      <div class="cam-row"><span>Зебра</span><span>94+</span></div>
+      <div class="cam-row"><span>Фокус</span><span>AF-C · Глаз</span></div>
+      <div class="cam-row"><span>SteadyShot</span><span>Стандарт / Выкл</span></div>
+    </div>
+    <div class="stack text">
+      <ol class="steps">
+        <li><b>Режим Видео и M.</b> Ручной режим, чтобы автоматика не меняла яркость прямо посреди дубля.</li>
+        <li><b>XAVC S 4K, 25p, 4:2:2 10 бит.</b> 10 бит обязательно для Log. XAVC HS (H.265) даёт файлы поменьше, но компьютеру с ними тяжелее.</li>
+        <li><b>Почему 25 кадров.</b> В розетке ток мигает 50 раз в секунду. Если снимать 30p при лампах, будет мерцание. 25p и 50p с лампами дружат. Нет 25p в меню? Переключи NTSC/PAL на PAL (камера отформатирует карту, так что сначала скинь файлы).</li>
+        <li><b>Профиль PP9</b> = S-Log3 / S-Gamut3.Cine. Остальное в профиле не трогай. Запомни эти два слова: они нужны в DaVinci. Для лёгкой съёмки есть <b>PP11 = S-Cinetone</b>.</li>
+        <li><b>Помощь отображения гаммы</b> — это «очки» для экрана. На экране картинка нормальная, а пишется всё равно Log.</li>
+        <li><b>ISO 800</b> — минимум для S-Log3, так и должно быть. В S-Cinetone можно от 100. Выше 6400 будет заметный шум.</li>
+        <li><b>Баланс белого вручную</b>: солнце 5600K, пасмурно 6000–6500K, тень 7000K, тёплые лампы 3200K, белые LED 4300–5000K. Ещё лучше — по белому листу (пользовательский баланс).</li>
+        <li><b>Зебра 94+</b> для S-Log3 (100+ для S-Cinetone). Полоски покажут, где ведёрко переливается.</li>
+        <li><b>Сохрани</b> всё через «Запомнить настр. съёмки»: слот 1 — LOG, слот 2 — Cinetone.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ================= УРОК 2 ================= -->
+<section class="lesson" id="urok-2">
+  <div class="lesson-head">
+    <div class="lesson-num">2</div>
+    <div><h2>Как снимать, чтобы было легко красить</h2><p>В DaVinci хорошее видео можно сделать отличным, а плохое — только чуть менее плохим.</p></div>
+  </div>
+
+  <div class="cols">
+    <div class="stack text">
+      <h3>В S-Log3 снимай чуть светлее</h3>
+      <p>Если снять Log темновато, будет много шума. Поэтому Log снимают <b>светлее, чем кажется нормальным</b>, а в DaVinci опускают яркость обратно — и шум уходит вместе с ней. Поднять тёмное без шума нельзя.</p>
+      <ul class="clean">
+        <li><b>Экспонометр</b> (шкала внизу экрана в режиме M): целься в <b>+1 … +1,7</b>.</li>
+        <li><b>Зебра 94+:</b> делай светлее, пока на важных местах не появятся полоски, потом чуть убавь.</li>
+        <li>Небо или лампа могут пересвечиваться, если они не главные. <b>Лицо — никогда.</b></li>
+        <li>В S-Cinetone хитрость не нужна: экспонометр около 0.</li>
+      </ul>
+      <div class="callout teal">Проверь это сам: в лаборатории есть задания <b>«Тёмный кадр»</b> и <b>«Пересвет»</b>. В первом увидишь шум, во втором — потерянные детали.
+        <div class="seg" style="margin-top:8px"><button class="btn" data-goto="c4">Открыть «Тёмный кадр»</button><button class="btn" data-goto="c5">Открыть «Пересвет»</button></div></div>
+    </div>
+    <div class="demo">
+      <div class="demo-title">Попробуй: поставь свет на голову-шарик</div>
+      <canvas id="litCv" width="300" height="300" style="max-width:300px; align-self:center; border-radius:50%"></canvas>
+      <div class="seg" id="litDirs"></div>
+      <div class="ctrl"><label for="litSoft">Мягкость света</label><output id="litSoftOut"></output><input type="range" id="litSoft" min="0" max="1" step="0.05" value="0.35"></div>
+      <div class="seg">
+        <button class="btn" id="litFill" aria-pressed="false">Заполняющий свет</button>
+        <button class="btn" id="litRim" aria-pressed="false">Контровой свет</button>
+      </div>
+      <p class="muted" id="litNote" style="font-size:14px"></p>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Правила хорошего света</h3>
+    <div class="cols">
+      <ol class="steps text">
+        <li><b>Свет одного цвета.</b> Не смешивай оранжевую лампу и синее окно на лице: кожа станет пятнистой, и это почти не исправить.</li>
+        <li><b>Сбоку красивее, чем спереди.</b> Свет в лоб делает лицо плоским, свет сбоку даёт объём.</li>
+        <li><b>Большой источник — мягкий свет.</b> Окно, облака или лампа через белую ткань дают красивые тени.</li>
+        <li><b>Не ставь человека спиной к окну</b>, если не хочешь силуэт.</li>
+        <li><b>Контровой свет</b> сзади подсвечивает волосы и плечи и отделяет человека от фона.</li>
+        <li><b>Фон чуть темнее лица</b>, а в глубине кадра — огонёк. Кадр станет объёмным.</li>
+      </ol>
+      <div class="demo">
+        <div class="demo-title">Схема «три света», вид сверху</div>
+        <svg viewBox="0 0 360 250" role="img" aria-label="Схема трёх источников света вокруг человека">
+          <rect x="0" y="0" width="360" height="40" class="d-surface" rx="4"/>
+          <text x="180" y="25" text-anchor="middle" class="d-muted" font-size="12">ФОН</text>
+          <polygon points="70,150 160,95 175,120" class="d-beam"/>
+          <polygon points="300,160 200,105 195,125" class="d-beam" style="opacity:.09"/>
+          <polygon points="235,58 170,92 192,98" class="d-beam" style="opacity:.14"/>
+          <circle cx="180" cy="108" r="17" class="d-ink"/>
+          <text x="180" y="147" text-anchor="middle" class="d-ink" font-size="12" font-weight="600">человек</text>
+          <circle cx="62" cy="155" r="13" class="d-acc"/>
+          <text x="62" y="186" text-anchor="middle" class="d-acc" font-size="12" font-weight="600">рисующий</text>
+          <text x="62" y="200" text-anchor="middle" class="d-muted" font-size="11">сбоку 45°, яркий</text>
+          <circle cx="306" cy="165" r="9" class="d-acc" style="opacity:.6"/>
+          <text x="306" y="190" text-anchor="middle" class="d-acc" font-size="12" font-weight="600">заполняющий</text>
+          <text x="306" y="204" text-anchor="middle" class="d-muted" font-size="11">слабый</text>
+          <circle cx="242" cy="55" r="9" class="d-teal"/>
+          <text x="262" y="72" class="d-teal" font-size="12" font-weight="600">контровой</text>
+          <rect x="164" y="218" width="32" height="20" rx="3" class="d-ink"/>
+          <circle cx="180" cy="215" r="6" class="d-ink"/>
+          <text x="205" y="233" class="d-muted" font-size="12">камера</text>
+        </svg>
+        <p class="muted" style="font-size:14px">Ламп нет? Окно — рисующий свет, а белый лист или стена с другой стороны — заполняющий.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Ошибки, которые DaVinci не исправит</h3>
+    <div class="tbl"><table>
+      <tr><th>Ошибка</th><th>Почему не исправить</th><th>Как не допустить</th></tr>
+      <tr><td>Пересвет</td><td>Ведёрко перелилось, информации нет</td><td>Зебры, ND-фильтр</td></tr>
+      <tr><td>Сильный недосвет в Log</td><td>Шум и грязные цвета</td><td>Снимай светлее, добавь света</td></tr>
+      <tr><td>Смешанный свет на лице</td><td>Кожа разного цвета в разных местах</td><td>Один тип света</td></tr>
+      <tr><td>Мерцание от ламп</td><td>Убирается очень тяжело</td><td>25p/50p, выдержка 1/50 или 1/100</td></tr>
+      <tr><td>Нет фокуса</td><td>Резкость не вернуть</td><td>Автофокус по глазу</td></tr>
+      <tr><td>8 бит в Log</td><td>Полоски на небе</td><td>Всегда 10 бит</td></tr>
+      <tr><td>Автобаланс и авто-ISO</td><td>Цвет и яркость «плавают»</td><td>Всё вручную</td></tr>
+    </table></div>
+  </div>
+
+  <div class="block">
+    <h3>Чек-лист перед красной кнопкой</h3>
+    <div class="demo check" data-list="shoot">
+      <label><input type="checkbox" id="s1"><span>Профиль правильный: PP9 S-Log3 или PP11 S-Cinetone</span></label>
+      <label><input type="checkbox" id="s2"><span>Запись 4:2:2 10 бит</span></label>
+      <label><input type="checkbox" id="s3"><span>Выдержка 1/50 для 25p</span></label>
+      <label><input type="checkbox" id="s4"><span>Баланс белого выставлен вручную под этот свет</span></label>
+      <label><input type="checkbox" id="s5"><span>Log: экспонометр +1…+1,7, на лице нет зебр</span></label>
+      <label><input type="checkbox" id="s6"><span>Свет одного цвета и падает сбоку</span></label>
+      <label><input type="checkbox" id="s7"><span>Фокус на глазах</span></label>
+      <label><input type="checkbox" id="s8"><span>Звук проверен, батарея и карта в порядке</span></label>
+      <button class="btn ghost goto" data-reset="shoot">Снять все галочки</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= УРОК 3 ================= -->
+<section class="lesson" id="urok-3">
+  <div class="lesson-head">
+    <div class="lesson-num">3</div>
+    <div><h2>Готовим DaVinci Resolve</h2><p>Настраиваем проект один раз и сохраняем как пресет. Потом знакомимся с вкладкой Color и учимся читать скопы.</p></div>
+  </div>
+  <div class="cols">
+    <div class="stack">
+      <div class="tbl"><table>
+        <tr><th>Настройка проекта ⚙️</th><th>Значение</th></tr>
+        <tr><td>Timeline resolution</td><td>3840×2160 Ultra HD</td></tr>
+        <tr><td>Timeline frame rate</td><td><b>25</b> — как снимал. Потом не поменять!</td></tr>
+        <tr><td>Color science</td><td>DaVinci YRGB</td></tr>
+        <tr><td>Timeline color space</td><td>Rec.709 Gamma 2.4</td></tr>
+        <tr><td>Output color space</td><td>Rec.709 Gamma 2.4</td></tr>
+      </table></div>
+      <p class="text">Так мы говорим DaVinci: «Сам ничего не переводи, я сделаю это нодой». Сохрани настройки: <b>⋯ → Save Current Settings as Preset</b>.</p>
+      <div class="callout teal"><b>Тормозит 4K?</b> Media → правый клик по клипам → <b>Generate Proxy Media</b>, затем Playback → Prefer Proxies. В Studio включи декодирование на видеокарте: Preferences → Decode Options.</div>
+    </div>
+    <div class="demo">
+      <div class="demo-title">Где что на вкладке Color</div>
+      <div class="rmock">
+        <div>Галерея<br><span style="font-weight:400">стоп-кадры</span></div>
+        <div class="viewer">Вьюер — картинка</div>
+        <div>Ноды<br><span style="font-weight:400">схема покраски</span></div>
+        <div class="clips">Клипы — миниатюры с таймлайна</div>
+        <div class="wheels">Колёса и инструменты: Primaries, Curves, Qualifier, Window, Tracker…</div>
+        <div>Скопы<br><span style="font-weight:400">графики</span></div>
+      </div>
+      <p class="muted" style="font-size:14px">Нет скопов? Workspace → Video Scopes → On.</p>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Скопы — рентген для картинки</h3>
+    <p class="text">Глаза обманывают: монитор может быть слишком ярким, а глаз быстро привыкает к любому цвету. Скопы не обманывают. Живые скопы есть в лаборатории: двигай ползунки и смотри, как они меняются.</p>
+    <div class="tbl"><table>
+      <tr><th>Скоп</th><th>Что показывает</th><th>Как читать</th></tr>
+      <tr><td><b>Waveform</b></td><td>Яркость. Вверх — светло, вниз — темно; лево-право — как на кадре</td><td>Тёмное чуть выше низа, светлое чуть ниже верха. Лицо примерно на 55–70%</td></tr>
+      <tr><td><b>Parade</b></td><td>То же, но отдельно для R, G и B</td><td>На белом или сером три столбика на одной высоте — баланс правильный</td></tr>
+      <tr><td><b>Vectorscope</b></td><td>Оттенок и насыщенность</td><td>Дальше от центра — больше цвета. Кожа любого человека лежит на <b>линии кожи</b></td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ================= УРОК 4 + LAB ================= -->
+<section class="lesson" id="urok-4">
+  <div class="lesson-head">
+    <div class="lesson-num">4</div>
+    <div><h2>Первая покраска</h2><p>Главное правило колориста: <b>сначала исправляем, потом украшаем</b>. Как в комнате: сначала убрать мусор, потом вешать картины.</p></div>
+  </div>
+
+  <div class="stack text">
+    <p><b>Нода</b> — это коробочка, которая делает с картинкой одно действие. Картинка идёт слева направо через все ноды по очереди. Одна нода — одна задача, тогда легко найти, что где. Нажми на ноду, чтобы перейти к ней в лаборатории.</p>
+  </div>
+  <div class="nodes" id="nodeChain">
+    <button class="node" data-grp="g-exp"><small>01</small><span>Экспозиция</span></button><i class="wire"></i>
+    <button class="node" data-grp="g-wb"><small>02</small><span>Баланс белого</span></button><i class="wire"></i>
+    <button class="node cst" data-grp="g-cst"><small>03 · CST</small><span>S-Log3 → 709</span></button><i class="wire"></i>
+    <button class="node" data-grp="g-con"><small>04</small><span>Контраст</span></button><i class="wire"></i>
+    <button class="node" data-grp="g-sat"><small>05</small><span>Насыщенность</span></button><i class="wire"></i>
+    <button class="node" data-grp="g-skin"><small>06</small><span>Кожа</span></button><i class="wire"></i>
+    <button class="node" data-grp="g-look"><small>07</small><span>Лук</span></button>
+  </div>
+  <p class="text muted">Экспозиция и баланс стоят <b>до</b> перевода: в Log ещё весь запас информации, и правка выглядит так, будто ты правильно снял на камеру. Контраст и цвет правим <b>после</b> перевода.</p>
+
+  <!-- LAB -->
+  <div class="lab" id="lab">
+    <div class="lab-head">
+      <div><div class="eyebrow">Лаборатория покраски</div><h3>Покрась кадр сам</h3></div>
+      <div class="upload">
+        <select id="upMode" aria-label="Какой это кадр"><option value="log">Мой кадр в S-Log3</option><option value="709">Обычный кадр / S-Cinetone</option></select>
+        <span class="btn file-btn">Загрузить свой кадр<input type="file" id="upFile" accept="image/*"></span>
+      </div>
+    </div>
+    <p class="muted" style="font-size:14px; margin-bottom:10px">Кадр нарисован программой, но ведёт себя как настоящий S-Log3: в нём есть шум, пересвет и запас в светах. Выбери задание. Можно загрузить и свой кадр: сделай скриншот из своего S-Log3 видео.</p>
+    <div class="challenges" id="chList"></div>
+
+    <div class="lab-grid">
+      <div class="lab-view">
+        <div class="viewer-box" id="viewerBox">
+          <canvas id="viewCv" width="640" height="360" aria-label="Вьюер"></canvas>
+          <span class="hint" id="viewHint" hidden>Кликни по серому или белому</span>
+        </div>
+        <div class="ctrl"><label for="splitR">Шторка: сравнить с исходником</label><output id="splitOut">выкл</output><input type="range" id="splitR" min="0" max="100" step="1" value="0"></div>
+        <div class="scopes">
+          <div class="scope">
+            <div class="scope-tabs"><button id="tabWave" aria-pressed="true">Waveform</button><button id="tabParade" aria-pressed="false">Parade</button></div>
+            <canvas id="waveCv" width="480" height="230"></canvas>
+          </div>
+          <div class="scope">
+            <div class="scope-label">Vectorscope · линия кожи</div>
+            <canvas id="vecCv" width="240" height="240"></canvas>
+          </div>
+        </div>
+        <div class="task" id="task"></div>
+      </div>
+
+      <div class="panel">
+        <div class="seg">
+          <button class="btn" id="btnOrig" aria-pressed="false">Shift+D: показать исходник</button>
+          <button class="btn ghost" id="btnReset">Сбросить ползунки</button>
+        </div>
+        <div class="group" id="g-exp"><div class="group-h"><b>Экспозиция (Offset)</b><small>НОДА 01</small></div><div id="c-exp"></div></div>
+        <div class="group" id="g-wb"><div class="group-h"><b>Баланс белого</b><small>НОДА 02</small></div><div id="c-wb"></div>
+          <button class="btn" id="btnPick" aria-pressed="false">Пипетка: кликни по серому</button></div>
+        <div class="group cst" id="g-cst"><div class="group-h"><b>Color Space Transform</b><small>НОДА 03</small></div>
+          <label class="switch"><input type="checkbox" id="cstOn" checked> Перевод включён</label>
+          <div class="mono muted" style="font-size:12px">In: S-Gamut3.Cine / S-Log3<br>Out: Rec.709 / Gamma 2.4 · Tone mapping: DaVinci</div>
+          <div class="muted" id="cstNote" style="font-size:13px" hidden>Для обычного кадра и S-Cinetone перевод не нужен.</div></div>
+        <div class="group" id="g-con"><div class="group-h"><b>Контраст</b><small>НОДА 04</small></div><div id="c-con"></div>
+          <canvas id="curveCv" width="300" height="150" style="width:100%; height:auto; background:var(--scope); border-radius:6px"></canvas></div>
+        <div class="group" id="g-sat"><div class="group-h"><b>Насыщенность</b><small>НОДА 05</small></div><div id="c-sat"></div></div>
+        <div class="group" id="g-wheels"><div class="group-h"><b>Колёса: Lift · Gamma · Gain</b><small>PRIMARIES</small></div>
+          <div class="wheels">
+            <div class="wheel-col"><b>LIFT · тени</b><div class="wheel" data-key="lift" tabindex="0" role="slider" aria-label="Цвет теней"><span class="dot"></span></div><input type="range" id="liftM" min="-0.15" max="0.15" step="0.005" value="0" aria-label="Яркость теней"><output id="liftMOut">0</output></div>
+            <div class="wheel-col"><b>GAMMA · середина</b><div class="wheel" data-key="gamma" tabindex="0" role="slider" aria-label="Цвет средних тонов"><span class="dot"></span></div><input type="range" id="gammaM" min="-0.4" max="0.4" step="0.01" value="0" aria-label="Яркость середины"><output id="gammaMOut">0</output></div>
+            <div class="wheel-col"><b>GAIN · света</b><div class="wheel" data-key="gain" tabindex="0" role="slider" aria-label="Цвет светов"><span class="dot"></span></div><input type="range" id="gainM" min="-0.4" max="0.4" step="0.01" value="0" aria-label="Яркость светов"><output id="gainMOut">0</output></div>
+          </div>
+          <div class="muted" style="font-size:12.5px">Тяни точку в сторону цвета. Двойной клик сбрасывает колесо.</div></div>
+        <div class="group" id="g-skin"><div class="group-h"><b>Кожа (квалифаер)</b><small>НОДА 06</small></div><div id="c-skin"></div>
+          <label class="switch"><input type="checkbox" id="maskOn"> Показать выделение (Shift+H)</label></div>
+        <div class="group" id="g-look"><div class="group-h"><b>Лук</b><small>НОДА 07</small></div>
+          <div class="seg" id="looks"></div><div id="c-look"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Как это делается в настоящем DaVinci</h3>
+    <div class="tbl"><table>
+      <tr><th>Нода</th><th>Где в DaVinci</th><th>Что делать</th></tr>
+      <tr><td>03 CST</td><td>Effects → Color Space Transform → перетащи на ноду</td><td>In: Sony S-Gamut3.Cine + Sony S-Log3. Out: Rec.709 + Gamma 2.4. Tone Mapping: DaVinci, Gamut Mapping: Saturation Compression</td></tr>
+      <tr><td>01 Экспозиция</td><td>Color Wheels → ползунок под колесом Offset</td><td>Опусти яркость на столько, на сколько снимал светлее. Серая карта — около 40–60% на Waveform</td></tr>
+      <tr><td>02 Баланс</td><td>Пипетка на панели колёс, или Temp и Tint</td><td>Кликни по серому или белому. На Parade у серого R=G=B</td></tr>
+      <tr><td>04 Контраст</td><td>Curves → Custom: S-кривая, или ползунок Contrast</td><td>Точку на ¼ — чуть вниз, на ¾ — чуть вверх. Совсем чуть-чуть!</td></tr>
+      <tr><td>05 Насыщенность</td><td>Ползунок Sat (по умолчанию 50)</td><td>55–65. На вектороскопе пятно не должно вылезать к краю</td></tr>
+    </table></div>
+    <p class="text muted">Если снимал в S-Cinetone, CST не нужен: картинка уже в Rec.709. Ползунок 1,00 в лаборатории — это 50 в DaVinci, а 1,20 — примерно 60.</p>
+    <div class="keys">
+      <div class="key"><kbd>Alt+S</kbd> новая нода</div>
+      <div class="key"><kbd>Ctrl+D</kbd> выкл. текущую ноду</div>
+      <div class="key"><kbd>Shift+D</kbd> выкл. всю покраску</div>
+      <div class="key"><kbd>Shift+H</kbd> показать выделение</div>
+      <div class="key"><kbd>Средняя кнопка</kbd> копировать покраску на клип</div>
+      <div class="key"><kbd>Правый клик</kbd> → Grab Still: стоп-кадр в галерею</div>
+    </div>
+    <div class="callout"><b>Сохрани шаблон.</b> Подпиши ноды, настрой CST и сделай Grab Still в альбом <b>PowerGrade</b>: он виден во всех проектах. На новом клипе: правый клик по стоп-кадру → <b>Apply Grade</b>.</div>
+  </div>
+</section>
+
+<!-- ================= УРОК 5 ================= -->
+<section class="lesson" id="urok-5">
+  <div class="lesson-head">
+    <div class="lesson-num">5</div>
+    <div><h2>Точечная покраска</h2><p>Раньше мы красили всю стену валиком. Теперь дорисуем узор кисточкой: отдельно лицо, небо и траву.</p></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Инструмент</th><th>Как выбирает</th><th>Когда</th></tr>
+    <tr><td><b>Qualifier</b></td><td>По цвету, как «волшебная палочка»</td><td>Кожа, небо, трава, одежда</td></tr>
+    <tr><td><b>Power Window</b></td><td>По форме: круг, квадрат, рисунок</td><td>Подсветить лицо, затемнить края</td></tr>
+    <tr><td><b>Magic Mask</b> (Studio)</td><td>Нейросеть сама находит человека или предмет</td><td>Человек целиком, лицо, одежда</td></tr>
+  </table></div>
+
+  <div class="cols" style="margin-top:28px">
+    <div class="stack text">
+      <h3>Кожа — самое важное</h3>
+      <p>Зритель простит странное небо, но не простит зелёное или фиолетовое лицо.</p>
+      <ol class="steps">
+        <li>Включи на вектороскопе <b>линию кожи</b>: шестерёнка скопа → Show Skin Tone Indicator.</li>
+        <li>Нода 06 → вкладка <b>Qualifier</b> → пипеткой по щеке (не по тени и не по блику).</li>
+        <li><b>Shift+H</b> показывает, что выбралось. Добавляй пипеткой с плюсом, лишнее убирай ползунками Hue / Sat / Lum.</li>
+        <li><b>Matte Finesse:</b> Clean Black, Clean White и Blur — края должны быть мягкими.</li>
+        <li>Двигай <b>Hue</b> или колесо <b>Gamma</b> совсем чуть-чуть, пока пятно кожи не ляжет на линию.</li>
+      </ol>
+      <p>Правило работает для людей с <b>любым цветом кожи</b>: меняется только расстояние от центра, а не направление.</p>
+      <button class="btn primary goto" data-goto="c6">Попробовать в лаборатории: «Розовая кожа»</button>
+    </div>
+    <div class="stack text">
+      <h3>Окна, трекинг и маски</h3>
+      <ul class="clean">
+        <li><b>Подсветка лица.</b> Новая нода → Window → круг на лицо → Soft 10–30 → чуть подними Gamma.</li>
+        <li><b>Виньетка.</b> Овал на весь кадр → Invert → чуть опусти Gamma/Gain. Взгляд сам идёт в центр. Попробуй ползунок «Виньетка» в лаборатории.</li>
+        <li><b>Tracker.</b> Человек двигается? Вкладка Tracker → Track Forward, и окно поедет за лицом.</li>
+        <li><b>Magic Mask.</b> Штрих по человеку → Track Forward. Теперь можно сделать человека ярче, а фон темнее.</li>
+        <li><b>Небо.</b> Квалифаер на небо → Gain чуть к синему, яркость Gain чуть вниз.</li>
+        <li><b>Трава.</b> Curves → Hue vs Sat: зелёный вниз. Hue vs Hue: зелёный чуть к жёлтому.</li>
+      </ul>
+      <div class="callout warn">Мягкие края у всех масок — всегда. После каждой ноды жми Ctrl+D. Если без ноды лучше, удали её.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= УРОК 6 ================= -->
+<section class="lesson" id="urok-6">
+  <div class="lesson-head">
+    <div class="lesson-num">6</div>
+    <div><h2>Делаем «кино»</h2><p>Картинка уже правильная. Теперь сделаем её красивой и узнаваемой — это и есть <b>лук</b>.</p></div>
+  </div>
+  <div class="cols">
+    <div class="stack text">
+      <h3>Из чего состоит киношный вид</h3>
+      <ul class="clean">
+        <li>Мягкие света: белое не режет глаз.</li>
+        <li>Чёрный не совсем чёрный: тени чуть приподняты или чуть цветные.</li>
+        <li>Тени холоднее, кожа и света теплее. Известный вариант — <b>Teal &amp; Orange</b>.</li>
+        <li>Два-три главных цвета в кадре, остальные приглушены.</li>
+        <li>Лёгкое зерно и ореол вокруг ярких мест, как на плёнке.</li>
+      </ul>
+      <h3>Teal &amp; Orange руками</h3>
+      <p>Lift (тени) — точку чуть к бирюзовому. Gain (света) — чуть к оранжевому. Проверь, что кожа осталась на линии. Слишком сильно? Вкладка Key → <b>Key Output Gain</b> 0,5–0,7 ослабляет ноду.</p>
+      <button class="btn primary goto" data-goto="c7">Попробовать луки в лаборатории</button>
+    </div>
+    <div class="stack">
+      <div class="tbl"><table>
+        <tr><th>Эффект (Studio)</th><th>Что делает</th><th>Куда ставить</th></tr>
+        <tr><td>Noise Reduction</td><td>Убирает шум. Temporal 2–3 кадра</td><td>Первой нодой</td></tr>
+        <tr><td>Film Look Creator</td><td>Готовый плёночный лук целиком</td><td>В конце, силу уменьшить</td></tr>
+        <tr><td>Halation</td><td>Красноватый ореол у ярких мест</td><td>В конце, чуть-чуть</td></tr>
+        <tr><td>Film Grain</td><td>Плёночное зерно</td><td>Последней нодой, слабо</td></tr>
+      </table></div>
+      <div class="callout warn"><b>LUT</b> — готовый «фильтр». Творческий LUT не кидай прямо на Log: почти все ждут уже переведённую картинку. Ставь его после CST, в ноду 07, и уменьши силу.</div>
+      <div class="callout teal"><b>Все клипы одинаковые.</b> Нода 07 → правый клик → Save as Shared Node, и лук меняется сразу во всех клипах. Ещё способ — двойной клик по стоп-кадру в галерее: появится сравнение половинками.</div>
+    </div>
+  </div>
+  <div class="block text">
+    <h3>Когда освоишься: автоматическое управление цветом</h3>
+    <p>Project Settings → Color Management: <b>DaVinci YRGB Color Managed</b>, режим SDR, выход Rec.709. Затем выдели клипы → правый клик → Input Color Space → <b>S-Gamut3.Cine/S-Log3</b>. CST-нода больше не нужна, а экспозицию удобно править колесом Exposure на вкладке HDR.</p>
+  </div>
+</section>
+
+<!-- ================= УРОК 7 ================= -->
+<section class="lesson" id="urok-7">
+  <div class="lesson-head">
+    <div class="lesson-num">7</div>
+    <div><h2>Экспорт и шпаргалки</h2><p>Сохраняем ролик так, чтобы на YouTube и в телефоне цвет был таким же, как в DaVinci.</p></div>
+  </div>
+  <div class="cols">
+    <div class="tbl"><table>
+      <tr><th>Deliver 🚀</th><th>YouTube</th><th>Reels / TikTok</th></tr>
+      <tr><td>Format</td><td>MP4</td><td>MP4</td></tr>
+      <tr><td>Codec</td><td>H.265 или H.264</td><td>H.264</td></tr>
+      <tr><td>Resolution</td><td>3840×2160</td><td>1080×1920</td></tr>
+      <tr><td>Frame rate</td><td>25</td><td>25</td></tr>
+      <tr><td>Битрейт</td><td>40–80 Мбит/с</td><td>15–20 Мбит/с</td></tr>
+      <tr><td>Звук</td><td>AAC 320</td><td>AAC 320</td></tr>
+    </table></div>
+    <div class="stack text">
+      <h3>«В плеере цвета другие!»</h3>
+      <ul class="clean">
+        <li><b>Mac</b> показывает видео светлее и бледнее. При экспорте: Advanced → Gamma Tag <b>Rec.709-A</b>.</li>
+        <li><b>Монитор</b>: режим sRGB, средняя яркость, без «улучшайзеров».</li>
+        <li>Крась при приглушённом ровном свете, без солнца на экране.</li>
+        <li>Проверь ролик на трёх экранах: компьютер, телефон, телевизор.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Топ ошибок новичков</h3>
+    <div class="tbl"><table>
+      <tr><th>Ошибка</th><th>Как правильно</th></tr>
+      <tr><td>Кислотные цвета</td><td>Sat 55–65, следи за вектороскопом</td></tr>
+      <tr><td>Оранжевая или розовая кожа</td><td>Кожа на линии кожи</td></tr>
+      <tr><td>Провалены тени</td><td>Низ Waveform не прилипает толстой полосой</td></tr>
+      <tr><td>Красишь без скопов</td><td>Скопы всегда включены</td></tr>
+      <tr><td>Творческий LUT прямо на Log</td><td>Сначала CST, потом LUT</td></tr>
+      <tr><td>Все клипы разные</td><td>Shared Node и сравнение со стоп-кадром</td></tr>
+      <tr><td>Глаз «замылился» за 3 часа</td><td>Перерыв 5 минут, посмотри на серое или белое</td></tr>
+    </table></div>
+  </div>
+
+  <div class="block">
+    <h3>План на месяц</h3>
+    <div class="demo check" data-list="plan">
+      <label><input type="checkbox" id="p1"><span><b>Неделя 1.</b> Уроки 0–2. Каждый день 5 минут съёмки в S-Log3 и S-Cinetone: учись экспозиции и балансу.</span></label>
+      <label><input type="checkbox" id="p2"><span><b>Неделя 2.</b> Уроки 3–4. Каждый день крась 5–10 клипов: CST, экспозиция, баланс, контраст, насыщенность.</span></label>
+      <label><input type="checkbox" id="p3"><span><b>Неделя 3.</b> Урок 5. Кожа, подсветка лица, небо. Ролик «Мой день» на минуту.</span></label>
+      <label><input type="checkbox" id="p4"><span><b>Неделя 4.</b> Уроки 6–7. Свой лук в PowerGrade и ролик на 2–3 минуты.</span></label>
+      <button class="btn ghost goto" data-reset="plan">Снять все галочки</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Большая шпаргалка</h3>
+<div class="cheat"><em>СЪЁМКА</em>
+Видео · M · XAVC S 4K · 25p · 4:2:2 10 бит
+PP9: S-Log3 / S-Gamut3.Cine   (или PP11: S-Cinetone)
+ISO 800+ · выдержка 1/50 · яркость — ND-фильтром
+Баланс белого вручную · Log: +1…+1,7, зебра 94+ не на лице
+
+<em>DAVINCI</em>
+Проект: 25 к/с · DaVinci YRGB · Rec.709 Gamma 2.4
+[00 Шум] → [01 Экспозиция] → [02 Баланс] → [03 CST]
+→ [04 Контраст] → [05 Sat] → [06 Кожа] → [07 Лук] → [08 Зерно]
+Parade: R=G=B на сером · Waveform: 0…95% · кожа на линии
+
+<em>ЭКСПОРТ</em>
+MP4 · H.265/H.264 · 3840×2160 · 25 к/с · 40–80 Мбит/с</div>
+  </div>
+</section>
+
+<footer>Курс пройден! Дальше нужна только практика. Лучшие колористы не те, кто знает все кнопки, а те, кто много смотрит и много красит.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const W=640,H=360,N=W*H;
+const $=id=>document.getElementById(id);
+
+/* ---------- S-Log3 math ---------- */
+const enc=x=> x>=0.01125 ? (420+Math.log10((x+0.01)/0.19)*261.5)/1023 : (x*(171.2102946929-95)/0.01125+95)/1023;
+const dec=y=>{const c=y*1023; return c>=171.2102946929 ? Math.pow(10,(c-420)/261.5)*0.19-0.01 : (c-95)*0.01125/(171.2102946929-95);};
+const CLIP=dec(0.94);
+function tone(x){ if(x<=0) return 0; const t=x*0.8; let v=(t*(2.51*t+0.03))/(t*(2.43*t+0.59)+0.14); if(v>1)v=1; return Math.pow(v,1/2.4); }
+const s2l=v=>{v/=255; return v<=0.04045? v/12.92 : Math.pow((v+0.055)/1.055,2.4);};
+let gSpare=null;
+function gauss(){ if(gSpare!==null){const s=gSpare; gSpare=null; return s;} let u=0,v=0; while(u===0)u=Math.random(); v=Math.random(); const m=Math.sqrt(-2*Math.log(u)); gSpare=m*Math.sin(2*Math.PI*v); return m*Math.cos(2*Math.PI*v); }
+const GR=new Float32Array(N); for(let i=0;i<N;i++) GR[i]=(Math.random()+Math.random()-1);
+
+/* ---------- procedural scene ---------- */
+const Lc=L=>{const v=Math.round(255*Math.sqrt(Math.min(Math.max(L,0),8)/8)); return `rgb(${v},${v},${v})`;};
+function paint(ctx,isL,kind,pink){
+  const F=(a,L)=> isL?Lc(L):a;
+  const lg=(x0,y0,x1,y1,st)=>{const g=ctx.createLinearGradient(x0,y0,x1,y1); st.forEach(s=>g.addColorStop(s[0], isL?Lc(s[2]):s[1])); return g;};
+  const ell=(x,y,rx,ry)=>{ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2); ctx.fill();};
+  if(kind==='out'){
+    ctx.fillStyle=lg(0,0,0,H*0.62,[[0,'#4f8fd0',4.2],[1,'#c4dcf0',5.2]]); ctx.fillRect(0,0,W,H*0.64);
+    [[120,70,62,18],[200,58,44,14],[470,96,70,16],[528,84,40,13]].forEach(c=>{ ctx.fillStyle=F('#e8edf2',3.4); ell(c[0],c[1],c[2],c[3]); ctx.fillStyle=F('#ffffff',4.8); ell(c[0]-c[2]*0.15,c[1]-c[3]*0.35,c[2]*0.72,c[3]*0.6); });
+    ctx.fillStyle=F('#557f4c',0.9); ctx.beginPath(); ctx.moveTo(0,H*0.6); ctx.bezierCurveTo(W*0.2,H*0.5,W*0.4,H*0.58,W*0.6,H*0.55); ctx.bezierCurveTo(W*0.8,H*0.52,W*0.9,H*0.58,W,H*0.56); ctx.lineTo(W,H*0.7); ctx.lineTo(0,H*0.7); ctx.fill();
+    ctx.fillStyle=lg(0,H*0.62,0,H,[[0,'#78a844',1.05],[1,'#4b7a2a',0.8]]); ctx.fillRect(0,H*0.64,W,H*0.36);
+    ctx.fillStyle=F('#5b3f28',0.55); ctx.fillRect(579,150,14,92);
+    ctx.fillStyle=F('#2f5c2b',0.75); ell(586,138,46,44); ell(558,165,30,26); ell(614,164,28,26);
+  } else {
+    if(isL){ const g=ctx.createRadialGradient(120,100,8,120,100,430); g.addColorStop(0,Lc(2.4)); g.addColorStop(0.5,Lc(0.8)); g.addColorStop(1,Lc(0.35)); ctx.fillStyle=g; } else ctx.fillStyle='#cdb99b';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=F('#3a2c22',0.5); ctx.fillRect(470,52,130,96); ctx.fillStyle=F('#6f9fb0',0.5); ctx.fillRect(480,62,110,76);
+    ctx.fillStyle=F('#d7c27a',0.5); ell(535,118,26,12);
+    ctx.fillStyle=F('#2a2a2a',0.6); ctx.fillRect(117,106,6,190);
+    ctx.fillStyle=F('#f4e7c9',5.5); ctx.beginPath(); ctx.moveTo(92,58); ctx.lineTo(148,58); ctx.lineTo(162,108); ctx.lineTo(78,108); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=lg(0,H*0.8,0,H,[[0,'#6a4529',0.6],[1,'#4a2f1b',0.3]]); ctx.fillRect(0,H*0.8,W,H*0.2);
+  }
+  const P=isL?lg(300,0,420,0,[[0,null,1.25],[1,null,0.5]]):null;
+  const skin=pink?'#dc8f94':'#d9a283';
+  const S=(a)=>{ ctx.fillStyle = isL?P:a; };
+  S('#2f4f8f'); ctx.beginPath(); ctx.moveTo(248,H); ctx.quadraticCurveTo(254,262,330,250); ctx.lineTo(390,250); ctx.quadraticCurveTo(466,262,472,H); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=F(pink?'#c27a80':'#c58f70',0.75); ctx.fillRect(340,222,40,34);
+  S('#2b1d14'); ell(360,160,60,70);
+  S(skin); ell(360,178,50,62);
+  S('#2b1d14'); ell(360,128,53,28);
+  S('#24160f'); ell(342,175,5,3.5); ell(378,175,5,3.5);
+  S('#a55a4c'); ell(360,212,12,3);
+  ctx.fillStyle=F('#1c1c1c',1); ctx.fillRect(30,228,182,116);
+  ctx.fillStyle=F('#f0f0f0',1); ctx.fillRect(40,238,52,50);
+  ctx.fillStyle=F('#767676',1); ctx.fillRect(98,238,52,50);
+  ctx.fillStyle=F('#2e2e2e',1); ctx.fillRect(156,238,52,50);
+  ['#b03a2e','#d8c23a','#3f8f3f','#2f9fb0','#2f4fa0','#a8457f'].forEach((c,i)=>{ ctx.fillStyle=F(c,1); ctx.fillRect(40+i*28,296,26,40); });
+}
+const REG={grey:{x:106,y:246,w:36,h:34}, white:{x:48,y:246,w:36,h:34}, face:{x:320,y:184,w:20,h:16}, sky:{x:240,y:14,w:150,h:34}};
+const sceneCache={};
+function scene(kind,pink){
+  const key=kind+(pink?'p':''); if(sceneCache[key]) return sceneCache[key];
+  const a=document.createElement('canvas'); a.width=W; a.height=H; const ac=a.getContext('2d');
+  const l=document.createElement('canvas'); l.width=W; l.height=H; const lc=l.getContext('2d');
+  paint(ac,false,kind,pink); paint(lc,true,kind,pink);
+  const ad=ac.getImageData(0,0,W,H).data, ld=lc.getImageData(0,0,W,H).data;
+  const lut=new Float32Array(256); for(let v=0;v<256;v++) lut[v]=s2l(v);
+  const lin=new Float32Array(N*3);
+  const sx=kind==='out'?566:120, sy=kind==='out'?46:112, sr=kind==='out'?17:9, core=kind==='out'?60:40, halo=kind==='out'?2.5:1.4, hr=kind==='out'?70:46;
+  for(let i=0;i<N;i++){
+    const L=8*Math.pow(ld[i*4]/255,2);
+    const x=i%W, y=(i/W)|0; const d=Math.hypot(x-sx,y-sy);
+    for(let k=0;k<3;k++){ let v=lut[ad[i*4+k]]*L; if(d<hr){ const t=1-d/hr; v+=halo*t*t*(k===2?0.9:1); } if(d<sr) v=core*(k===2?0.9:1); lin[i*3+k]=v; }
+  }
+  return sceneCache[key]={lin};
+}
+function camera(sc,ev,iT,iG){
+  const lin=new Float32Array(N*3), log8=new Uint8ClampedArray(N*4); const e=Math.pow(2,ev);
+  const m=[e*Math.pow(2,iT), e*Math.pow(2,iG), e*Math.pow(2,-iT)];
+  for(let i=0;i<N;i++){ for(let k=0;k<3;k++){ let v=sc.lin[i*3+k]*m[k]; v+=gauss()*(0.0035+0.006*Math.sqrt(v>0?v:0)); if(v>CLIP)v=CLIP; let q=Math.round(enc(v)*1023)/1023; if(q<0)q=0; log8[i*4+k]=q*255; lin[i*3+k]=dec(q);} log8[i*4+3]=255; }
+  return {lin,log8,rec709:false,reg:REG};
+}
+
+/* ---------- grading pipeline ---------- */
+const SKIN=123*Math.PI/180;
+function hsl(h){ const f=n=>{const k=(n+h/30)%12; return 0.5-0.5*Math.max(-1,Math.min(k-3,9-k,1));}; return [f(0),f(8),f(4)]; }
+function wheelOff(v,s){ const r=Math.min(1,Math.hypot(v[0],v[1])); if(r<1e-4) return [0,0,0]; const h=(Math.atan2(v[0],-v[1])*180/Math.PI+360)%360; const c=hsl(h); const m=(c[0]+c[1]+c[2])/3; return c.map(x=>(x-m)*r*s); }
+function prep(P){
+  const e=Math.pow(2,P.ev), T=P.temp*0.01, Tn=P.tint*0.01;
+  const lo=wheelOff(P.lift,0.10), go=wheelOff(P.gamma,0.30), ga=wheelOff(P.gain,0.30);
+  return { wr:e*Math.pow(2,T), wg:e*Math.pow(2,-Tn), wb:e*Math.pow(2,-T),
+    L:[0,1,2].map(k=>P.liftM+lo[k]), G:[0,1,2].map(k=>1+P.gainM+ga[k]), E:[0,1,2].map(k=>Math.pow(2,-(P.gammaM+go[k])*1.6)),
+    c:P.contrast, sat:P.sat, skin:(P.skinHue!==0||P.skinSat!==0||P.showMask), hs:P.skinHue*Math.PI/180, ks:P.skinSat, mask:P.showMask,
+    vig:P.vignette, grain:P.grain, cst:P.cst };
+}
+const RES=new Float32Array(4);
+function shade(src,i,x,y,C){
+  const j=i*3, lin=src.lin; let r=lin[j]*C.wr, g=lin[j+1]*C.wg, b=lin[j+2]*C.wb;
+  if(src.rec709){ r=r>0?Math.pow(r,1/2.4):0; g=g>0?Math.pow(g,1/2.4):0; b=b>0?Math.pow(b,1/2.4):0; }
+  else if(C.cst){ r=tone(r); g=tone(g); b=tone(b); }
+  else { r=enc(r); g=enc(g); b=enc(b); }
+  const p=0.435, c=C.c;
+  r=(r-p)*c+p; g=(g-p)*c+p; b=(b-p)*c+p;
+  r+=C.L[0]*(1-r); g+=C.L[1]*(1-g); b+=C.L[2]*(1-b);
+  r*=C.G[0]; g*=C.G[1]; b*=C.G[2];
+  if(r>0) r=Math.pow(r,C.E[0]); if(g>0) g=Math.pow(g,C.E[1]); if(b>0) b=Math.pow(b,C.E[2]);
+  let Y=0.2126*r+0.7152*g+0.0722*b;
+  r=Y+(r-Y)*C.sat; g=Y+(g-Y)*C.sat; b=Y+(b-Y)*C.sat;
+  RES[3]=0;
+  if(C.skin){
+    const cb=(b-Y)/1.8556, cr=(r-Y)/1.5748, ch=Math.sqrt(cb*cb+cr*cr);
+    let d=Math.atan2(cr,cb)-SKIN; if(d>Math.PI)d-=2*Math.PI; if(d<-Math.PI)d+=2*Math.PI;
+    let w=(0.8-Math.abs(d))/0.35; w=w<0?0:(w>1?1:w); w*=Math.min(1,ch/0.035);
+    const yl=Math.min(1,Math.max(0,(Y-0.08)/0.1))*Math.min(1,Math.max(0,(0.98-Y)/0.08)); w*=yl;
+    RES[3]=w;
+    if(C.mask && w<0.1){ const v=0.16+Y*0.3; r=g=b=v; }
+    else if(w>0 && (C.hs!==0||C.ks!==0)){ const a=C.hs*w, ca=Math.cos(a), sa=Math.sin(a), k=1+C.ks*w; const nb=(cb*ca-cr*sa)*k, nr=(cb*sa+cr*ca)*k; r=Y+1.5748*nr; b=Y+1.8556*nb; g=(Y-0.2126*r-0.0722*b)/0.7152; }
+  }
+  if(C.vig>0){ const dx=x/W-0.5, dy=(y/H-0.5)*0.75; let t=(Math.sqrt(dx*dx+dy*dy)*2-0.45)/0.75; t=t<0?0:(t>1?1:t); t=t*t*(3-2*t); const f=1-C.vig*0.75*t; r*=f; g*=f; b*=f; }
+  if(C.grain>0){ const gn=GR[i]*C.grain*0.10*(0.35+Y*(1-Y)*2.6); r+=gn; g+=gn; b+=gn; }
+  RES[0]=r; RES[1]=g; RES[2]=b;
+}
+function render(src,P,out){
+  const C=prep(P); const split=Math.round((P.split||0)*W); const lg=src.log8;
+  for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ const i=y*W+x, o=i*4;
+    if(x<split){ out[o]=lg[o]; out[o+1]=lg[o+1]; out[o+2]=lg[o+2]; out[o+3]=255; continue; }
+    shade(src,i,x,y,C); out[o]=RES[0]*255; out[o+1]=RES[1]*255; out[o+2]=RES[2]*255; out[o+3]=255; } }
+}
+function region(src,P,rc){
+  const C=prep(P); let r=0,g=0,b=0,yy=0,y2=0,n=0;
+  for(let y=rc.y;y<rc.y+rc.h;y++) for(let x=rc.x;x<rc.x+rc.w;x++){ shade(src,y*W+x,x,y,C); const Y=0.2126*RES[0]+0.7152*RES[1]+0.0722*RES[2]; r+=RES[0]; g+=RES[1]; b+=RES[2]; yy+=Y; y2+=Y*Y; n++; }
+  r/=n; g/=n; b/=n; yy/=n; const Yc=0.2126*r+0.7152*g+0.0722*b;
+  const cb=(b-Yc)/1.8556, cr=(r-Yc)/1.5748; let ang=Math.atan2(cr,cb)*180/Math.PI; if(ang<0)ang+=360;
+  return {r,g,b,Y:yy,std:Math.sqrt(Math.max(0,y2/n-yy*yy)),ang};
+}
+
+/* ---------- HERO ---------- */
+const heroSrc=camera(scene('out',false),1.3,0,0);
+const heroP={ev:-1.3,temp:0,tint:0,cst:true,contrast:1.12,sat:1.18,liftM:0,gammaM:0,gainM:0,lift:[-0.087,0.492],gamma:[0,0],gain:[0.212,-0.339],skinHue:0,skinSat:0,showMask:false,vignette:0.35,grain:0,split:0.5};
+const hcv=$('heroCv'), hctx=hcv.getContext('2d'), himg=hctx.createImageData(W,H);
+function drawHero(){ render(heroSrc,heroP,himg.data); hctx.putImageData(himg,0,0); $('heroBar').style.left=(heroP.split*100)+'%'; }
+(function(){ const box=$('heroWipe'); let drag=false;
+  const set=e=>{ const r=box.getBoundingClientRect(); heroP.split=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)); drawHero(); };
+  box.addEventListener('pointerdown',e=>{drag=true; box.setPointerCapture(e.pointerId); set(e);});
+  box.addEventListener('pointermove',e=>{ if(drag) set(e); });
+  box.addEventListener('pointerup',()=>drag=false); box.addEventListener('pointercancel',()=>drag=false);
+})();
+drawHero();
+
+/* ---------- BUCKETS ---------- */
+(function(){
+  const vals=[0.03,0.06,0.1,0.16,0.25,0.35,0.5,0.8,1.05,4];
+  const box=$('buckets'); const els=vals.map(()=>{ const b=document.createElement('div'); b.className='bucket'; const w=document.createElement('div'); w.className='water'; b.appendChild(w); box.appendChild(b); return b; });
+  function upd(){ const ev=+$('bucketEv').value; $('bucketEvOut').textContent=(ev>0?'+':'')+ev.toFixed(1)+' ступ.';
+    let over=0,noise=0; vals.forEach((v,i)=>{ const f=v*Math.pow(2,ev)/1.2; const b=els[i]; b.firstChild.style.height=Math.min(100,f*100)+'%'; b.classList.toggle('over',f>1); b.classList.toggle('noise',f<0.02); if(f>1){ if(i<9) over++; } if(f<0.02) noise++; });
+    const r=$('bucketRead'); r.innerHTML='';
+    const add=(t,c)=>{const s=document.createElement('span'); s.className='pill '+(c||''); s.textContent=t; r.appendChild(s);};
+    if(over>0) add('Перелилось: '+over+' — детали потеряны','bad'); else add('Ничего важного не перелилось','ok');
+    if(noise>0) add('В тенях шум: '+noise,'bad'); else add('Тени без шума','ok');
+    if(over===0&&noise===0) add('Идеально!','ok');
+  }
+  $('bucketEv').addEventListener('input',upd); upd();
+})();
+
+/* ---------- EXPOSURE TRIANGLE ---------- */
+(function(){
+  const EW=480,EH=270; const FS=[1.8,2,2.8,4,5.6,8,11,16], SS=[25,50,100,200,500,1000], IS=[100,200,400,800,1600,3200,6400,12800];
+  const bg=document.createElement('canvas'); bg.width=EW; bg.height=EH; const b=bg.getContext('2d');
+  let g=b.createLinearGradient(0,0,0,EH); g.addColorStop(0,'#3a3226'); g.addColorStop(1,'#1c1915'); b.fillStyle=g; b.fillRect(0,0,EW,EH);
+  b.fillStyle='#2d4a2a'; for(let i=0;i<9;i++){ b.beginPath(); b.ellipse(40+i*7,200-i*12,26,9,-0.6+i*0.15,0,Math.PI*2); b.fill(); }
+  b.fillStyle='#5a4632'; b.fillRect(380,150,80,120); b.fillStyle='#e8d6a8'; b.fillRect(392,160,56,40);
+  for(let i=0;i<15;i++){ const x=18+i*31, y=48+Math.sin(i*0.9)*10+(i%2)*6; const rg=b.createRadialGradient(x,y,0,x,y,10); rg.addColorStop(0,'#fff6d0'); rg.addColorStop(0.35,'#ffc860'); rg.addColorStop(1,'rgba(255,170,60,0)'); b.fillStyle=rg; b.beginPath(); b.arc(x,y,10,0,Math.PI*2); b.fill(); }
+  const sm=document.createElement('canvas'); const smc=sm.getContext('2d');
+  const cv=$('etCv'), ctx=cv.getContext('2d');
+  function draw(){
+    const f=FS[+$('etF').value], s=SS[+$('etS').value], iso=IS[+$('etI').value];
+    $('etFOut').textContent='f/'+f; $('etSOut').textContent='1/'+s; $('etIOut').textContent=iso;
+    const blur=16*(2.8/f); const k=1/(1+blur/2.5);
+    sm.width=Math.max(8,Math.round(EW*k)); sm.height=Math.max(5,Math.round(EH*k)); smc.imageSmoothingEnabled=true; smc.drawImage(bg,0,0,sm.width,sm.height);
+    ctx.imageSmoothingEnabled=true; ctx.drawImage(sm,0,0,EW,EH);
+    // person (sharp)
+    ctx.fillStyle='#2f4f8f'; ctx.beginPath(); ctx.moveTo(150,EH); ctx.quadraticCurveTo(160,200,215,192); ctx.lineTo(265,192); ctx.quadraticCurveTo(320,200,330,EH); ctx.fill();
+    ctx.fillStyle='#2b1d14'; ctx.beginPath(); ctx.ellipse(240,128,44,52,0,0,Math.PI*2); ctx.fill();
+    const fg=ctx.createLinearGradient(200,0,280,0); fg.addColorStop(0,'#e6b08f'); fg.addColorStop(1,'#a8725a'); ctx.fillStyle=fg; ctx.beginPath(); ctx.ellipse(240,142,36,46,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2b1d14'; ctx.beginPath(); ctx.ellipse(240,104,38,20,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1b120c'; ctx.beginPath(); ctx.ellipse(227,140,3.5,2.5,0,0,Math.PI*2); ctx.ellipse(253,140,3.5,2.5,0,0,Math.PI*2); ctx.fill();
+    // moving ball
+    const len=900/s, n=len<2?1:Math.min(28,Math.ceil(len/1.5)); ctx.fillStyle='#ff8a3d';
+    ctx.globalAlpha=n===1?1:Math.min(1,2.4/n); for(let q=0;q<n;q++){ ctx.beginPath(); ctx.arc(352+(n===1?0:q*len/(n-1)),205,13,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1;
+    ctx.fillStyle='rgba(255,255,255,.75)'; ctx.font='600 12px "Golos Text", system-ui'; ctx.fillText('мяч летит →',350,240);
+    // exposure & noise
+    const F=Math.pow(2.8/f,2)*(50/s)*(iso/800); const sig=255*0.014*Math.sqrt(iso/800);
+    const im=ctx.getImageData(0,0,EW,EH), d=im.data;
+    for(let i=0;i<d.length;i+=4){ for(let c=0;c<3;c++){ const lv=Math.pow(d[i+c]/255,2.2)*F; d[i+c]=Math.pow(Math.min(1,lv),1/2.2)*255+(Math.random()+Math.random()-1)*sig*1.2; } }
+    ctx.putImageData(im,0,0);
+    const ev=Math.log2(F), r=$('etRead'); r.innerHTML='';
+    const add=(t,c)=>{const sp=document.createElement('span'); sp.className='pill '+(c||''); sp.textContent=t; r.appendChild(sp);};
+    add('Экспонометр: '+(ev>=0?'+':'')+ev.toFixed(1), Math.abs(ev)<=1?'ok':'bad');
+    add(f<=2.8?'Фон размыт — красиво':'Фон резкий', f<=2.8?'ok':'');
+    add(s===50?'1/50 — как в кино':(s<50?'Движение сильно смазано':'Движение резкое, в видео будет дёргаться'), s===50?'ok':'bad');
+    add(iso>3200?'Много шума':(iso>=1600?'Немного шума':'Шума мало'), iso>3200?'bad':(iso>=1600?'':'ok'));
+  }
+  ['etF','etS','etI'].forEach(id=>$(id).addEventListener('input',draw)); draw();
+})();
+
+/* ---------- KELVIN ---------- */
+(function(){
+  function kRGB(K){ const t=K/100; let r,g,b; if(t<=66){ r=255; g=99.4708025861*Math.log(t)-161.1195681661; b=t<=19?0:138.5177312231*Math.log(t-10)-305.0447927307; } else { r=329.698727446*Math.pow(t-60,-0.1332047592); g=288.1221695283*Math.pow(t-60,-0.0755148492); b=255; } return [r,g,b].map(v=>Math.max(1,Math.min(255,v))); }
+  const stops=[]; for(let k=2500;k<=10000;k+=500){ const c=kRGB(k); stops.push(`rgb(${c.map(Math.round).join(',')}) ${((k-2500)/7500*100).toFixed(1)}%`); }
+  $('kBar').style.background='linear-gradient(90deg,'+stops.join(',')+')';
+  const LIGHTS=[['Свеча',1900],['Лампа дома',3200],['Белый LED',4500],['Солнце',5600],['Пасмурно',6500],['Тень',7500]];
+  let light=3200; const seg=$('kLights');
+  LIGHTS.forEach(([n,k])=>{ const bt=document.createElement('button'); bt.className='btn'; bt.textContent=n+' · '+k+'K'; bt.setAttribute('aria-pressed',k===light?'true':'false'); bt.onclick=()=>{ light=k; [...seg.children].forEach(c=>c.setAttribute('aria-pressed','false')); bt.setAttribute('aria-pressed','true'); upd(); }; seg.appendChild(bt); });
+  function upd(){ const cam=+$('kCam').value; $('kCamOut').textContent=cam+'K';
+    const a=kRGB(light).map(s2l), c=kRGB(cam).map(s2l); let p=a.map((v,i)=>v/c[i]); const m=p[1]; p=p.map(v=>v/m*0.8); const mx=Math.max(...p); if(mx>1) p=p.map(v=>v/mx);
+    const sr=p.map(v=>{ v=Math.max(0,Math.min(1,v)); return Math.round(255*(v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055)); });
+    $('kSwatch').style.background=`rgb(${sr.join(',')})`;
+    const rb=p[0]/p[2]; let t,cls; if(rb>1.12){t='Бумага оранжевая (тёплая). Поставь на камере число поменьше.';cls='bad';} else if(rb<0.89){t='Бумага синяя (холодная). Поставь число побольше.';cls='bad';} else {t='Бумага белая — баланс правильный!';cls='ok';}
+    $('kVerdict').innerHTML=`<span class="pill ${cls}">${cls==='ok'?'Получилось':'Мимо'}</span><span style="font-size:15px">${t}</span><span class="muted" style="font-size:13px">Свет: ${light}K · камера: ${cam}K</span>`;
+  }
+  $('kCam').addEventListener('input',upd); upd();
+})();
+
+/* ---------- 8 vs 10 bit ---------- */
+(function(){
+  const c8=$('bit8').getContext('2d'), c10=$('bit10').getContext('2d'); const BW=640,BH=90;
+  function draw(ctx,levels,s){ const im=ctx.createImageData(BW,BH), d=im.data;
+    for(let x=0;x<BW;x++){ const v=0.44+0.08*x/(BW-1); const q=Math.round(v*levels)/levels; let o=(q-0.48)*s+0.5;
+      const rgb=[o-0.12,o,o+0.14].map(z=>Math.max(0,Math.min(1,z))*255);
+      for(let y=0;y<BH;y++){ const i=(y*BW+x)*4; d[i]=rgb[0]; d[i+1]=rgb[1]; d[i+2]=rgb[2]; d[i+3]=255; } }
+    ctx.putImageData(im,0,0); }
+  function upd(){ const s=+$('bitS').value; $('bitSOut').textContent='×'+s; draw(c8,255,s); draw(c10,1023,s); }
+  $('bitS').addEventListener('input',upd); upd();
+})();
+
+/* ---------- LIGHTING SPHERE ---------- */
+(function(){
+  const cv=$('litCv'), ctx=cv.getContext('2d'), S=300, R=118, cx=150, cy=150;
+  const DIRS={front:[0,-0.15,1], s45:[-0.65,-0.35,0.68], s90:[-1,-0.15,0.05], back:[0.25,-0.5,-0.85], below:[0,0.85,0.5]};
+  const NAMES=[['front','Спереди'],['s45','Сбоку 45°'],['s90','Сбоку 90°'],['back','Сзади'],['below','Снизу']];
+  const NOTES={front:'Свет в лоб: лицо плоское, объёма почти нет.', s45:'Классика: свет сбоку и чуть сверху. Появляются объём и красивая тень.', s90:'Половина лица в тени. Драматично, как в триллере.', back:'Свет сзади: почти силуэт. Добавь заполняющий, чтобы увидеть лицо.', below:'Свет снизу — «страшилка с фонариком». Так обычно не снимают.'};
+  let dir='s45', fill=false, rim=false; const seg=$('litDirs');
+  NAMES.forEach(([k,n])=>{ const b=document.createElement('button'); b.className='btn'; b.textContent=n; b.setAttribute('aria-pressed',k===dir?'true':'false'); b.onclick=()=>{dir=k; [...seg.children].forEach(c=>c.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); draw();}; seg.appendChild(b); });
+  $('litFill').onclick=function(){ fill=!fill; this.setAttribute('aria-pressed',fill); draw(); };
+  $('litRim').onclick=function(){ rim=!rim; this.setAttribute('aria-pressed',rim); draw(); };
+  $('litSoft').addEventListener('input',draw);
+  const nrm=v=>{const l=Math.hypot(...v); return v.map(x=>x/l);};
+  const skin=[0.69,0.37,0.24];
+  function draw(){ const s=+$('litSoft').value; $('litSoftOut').textContent=s<0.2?'жёсткий':(s<0.6?'средний':'мягкий');
+    const l=nrm(DIRS[dir]); const fl=nrm([-l[0]*0.9+0.1,-0.1,0.7]);
+    const im=ctx.createImageData(S,S), d=im.data;
+    for(let y=0;y<S;y++) for(let x=0;x<S;x++){ const i=(y*S+x)*4; const nx=(x-cx)/R, ny=(y-cy)/R, dd=nx*nx+ny*ny;
+      let col;
+      if(dd>1){ const v=0.035+0.02*(1-y/S); col=[v,v,v*1.1]; if(rim){ const e=Math.sqrt(dd); if(e<1.08){ const t=(1.08-e)/0.08; col=col.map(c=>c+0.08*t); } } }
+      else { const nz=Math.sqrt(1-dd); const dot=nx*l[0]+ny*l[1]+nz*l[2]; let I=Math.max(0,(dot+s)/(1+s))*1.0;
+        if(fill){ const df=nx*fl[0]+ny*fl[1]+nz*fl[2]; I+=0.22*Math.max(0,(df+0.6)/1.6); }
+        if(rim){ I+=0.9*Math.pow(1-nz,3)*Math.max(0,0.6-ny*0.6); }
+        I+=0.02; col=skin.map(c=>c*I); }
+      for(let k=0;k<3;k++){ const v=Math.min(1,Math.max(0,col[k])); d[i+k]=255*(v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055); } d[i+3]=255; }
+    ctx.putImageData(im,0,0);
+    $('litNote').textContent=NOTES[dir]+(rim?' Контровой свет обвёл голову светлой каёмкой и отделил её от фона.':'')+(fill?' Заполняющий свет смягчил тень.':'');
+  }
+  draw();
+})();
+
+/* ---------- CHECKLISTS ---------- */
+document.querySelectorAll('.check').forEach(list=>{
+  const key='ckl-'+list.dataset.list; let st={}; try{ st=JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  list.querySelectorAll('input').forEach(inp=>{ inp.checked=!!st[inp.id]; inp.addEventListener('change',()=>{ st[inp.id]=inp.checked; try{ localStorage.setItem(key,JSON.stringify(st)); }catch(e){} }); });
+});
+document.querySelectorAll('[data-reset]').forEach(b=>b.addEventListener('click',()=>{ const list=b.closest('.check'); list.querySelectorAll('input').forEach(i=>{ i.checked=false; }); try{ localStorage.removeItem('ckl-'+b.dataset.reset); }catch(e){} }));
+
+/* =================== LAB =================== */
+const DEF={ev:0,temp:0,tint:0,cst:true,contrast:1,sat:1,liftM:0,gammaM:0,gainM:0,lift:[0,0],gamma:[0,0],gain:[0,0],skinHue:0,skinSat:0,showMask:false,vignette:0,grain:0,split:0};
+let P=JSON.parse(JSON.stringify(DEF)); let src=null; let cur=null;
+const BASE={contrast:1.12,sat:1.15};
+const CH=[
+ {id:'c1',name:'1. Первая покраска',sub:'Серый S-Log3 → нормальное видео',scene:'out',ev:1.3,start:{cst:false},
+  task:'Кадр снят в S-Log3 и специально светлее (+1,3), как учили. Сделай из него нормальное видео.',
+  steps:['Включи перевод CST (нода 03): серость уйдёт.','Опусти Экспозицию примерно на столько, на сколько снимали светлее.','Проверь серый квадрат на карточке: на Parade три столбика должны быть на одной высоте.','Добавь немного контраста и насыщенности. Нажми «Проверить».'],
+  answer:{ev:-1.3,cst:true,contrast:1.12,sat:1.15}},
+ {id:'c2',name:'2. Оранжевая лампа',sub:'Баланс белого при лампах',scene:'in',ev:1.0,iT:0.75,start:{},
+  task:'Сняли дома при тёплой лампе, а баланс на камере забыли переставить с «солнца». Всё оранжевое.',
+  steps:['Нажми «Пипетка» и кликни по серому квадрату на карточке.','Или двигай Temp влево (холоднее), пока серый не станет серым.','Поправь экспозицию и проверь.'],
+  answer:{ev:-1.0,temp:-75,cst:true,contrast:1.1,sat:1.12}},
+ {id:'c3',name:'3. Зелёные лампы',sub:'Ползунок Tint',scene:'in',ev:0.8,iG:0.35,start:{},
+  task:'Дешёвые светодиодные лампы дают зелёный оттенок. Кожа выглядит больной.',
+  steps:['Двигай Tint вправо (к пурпурному) или используй пипетку на сером.','На Parade зелёный столбик должен опуститься до красного и синего.','Поправь экспозицию и проверь.'],
+  answer:{ev:-0.8,tint:35,cst:true,contrast:1.1,sat:1.12}},
+ {id:'c4',name:'4. Тёмный кадр',sub:'Почему Log снимают светлее',scene:'out',ev:-2.3,start:{},
+  task:'Этот кадр сняли слишком тёмным (−2,3). Попробуй его спасти.',
+  steps:['Подними Экспозицию, пока серый квадрат не станет нормальным.','Посмотри на тени, волосы и траву. Видишь «песок»? Это шум.','Сравни с заданием 1: там снимали светлее, и шума почти нет.'],
+  answer:{ev:2.3,cst:true,contrast:1.1,sat:1.1}},
+ {id:'c5',name:'5. Пересвет',sub:'Что теряется навсегда',scene:'out',ev:5,start:{},
+  task:'Этот кадр сильно пересвечен (+5). Ведёрки перелились.',
+  steps:['Опусти Экспозицию, чтобы серый квадрат стал нормальным.','Посмотри на небо, облака и белый квадрат: они стали плоскими и серыми.','Вот почему зебры на лице — это плохо.'],
+  answer:{ev:-5,cst:true,contrast:1.1,sat:1.1}},
+ {id:'c6',name:'6. Розовая кожа',sub:'Линия кожи на вектороскопе',scene:'out',ev:1.3,pink:true,start:{ev:-1.3,cst:true,contrast:1.1,sat:1.12},
+  task:'Основная покраска уже сделана, но кожа ушла в розовый. Верни её на линию кожи.',
+  steps:['Включи «Показать выделение», чтобы увидеть, что выбрал квалифаер. Потом выключи.','Двигай «Оттенок кожи», пока пятно кожи на вектороскопе не ляжет на линию.','Если кожа слишком яркая по цвету, чуть убавь «Насыщенность кожи».'],
+  answer:'skin'},
+ {id:'c7',name:'7. Свой лук',sub:'Teal & Orange, плёнка, Ч/Б',scene:'out',ev:1.3,start:{ev:-1.3,cst:true,contrast:1.12,sat:1.15},
+  task:'Картинка правильная. Теперь сделай её красивой. Правильного ответа тут нет.',
+  steps:['Нажми на пресеты лука и посмотри, что они меняют в колёсах.','Подвигай колёса Lift и Gain сам.','Добавь немного виньетки и зерна.','Нажимай «Shift+D», чтобы сравнить с исходником.'],
+  answer:null}
+];
+const srcCache={};
+function getSrc(ch){ const k=ch.id; if(!srcCache[k]) srcCache[k]= ch.id==='c1'?heroSrc: camera(scene(ch.scene,!!ch.pink),ch.ev,ch.iT||0,ch.iG||0); return srcCache[k]; }
+
+// sliders
+const SL={};
+function slider(parent,key,label,min,max,step,fmt){
+  const d=document.createElement('div'); d.className='ctrl';
+  d.innerHTML=`<label for="s-${key}">${label}</label><output id="o-${key}"></output><input type="range" id="s-${key}" min="${min}" max="${max}" step="${step}">`;
+  $(parent).appendChild(d); const inp=d.querySelector('input'), out=d.querySelector('output');
+  SL[key]={inp,out,fmt};
+  inp.addEventListener('input',()=>{ P[key]=+inp.value; out.textContent=fmt(P[key]); if(cur) cur.touched=true; schedule(); });
+  inp.addEventListener('dblclick',()=>{ P[key]=DEF[key]; syncUI(); schedule(); });
+}
+const sg=v=>(v>0?'+':'')+v;
+slider('c-exp','ev','Экспозиция, ступени',-6,6,0.05,v=>sg(v.toFixed(2)));
+slider('c-wb','temp','Temp: синее ← → жёлтое',-100,100,1,v=>sg(Math.round(v)));
+slider('c-wb','tint','Tint: зелёное ← → пурпурное',-100,100,1,v=>sg(Math.round(v)));
+slider('c-con','contrast','Контраст',0.5,2,0.01,v=>v.toFixed(2));
+slider('c-sat','sat','Насыщенность',0,2,0.01,v=>v.toFixed(2)+' · в DaVinci ≈ '+Math.round(v*50));
+slider('c-skin','skinHue','Оттенок кожи: к красному ← → к жёлтому',-40,40,1,v=>sg(Math.round(v))+'°');
+slider('c-skin','skinSat','Насыщенность кожи',-0.6,0.6,0.01,v=>sg(v.toFixed(2)));
+slider('c-look','vignette','Виньетка',0,1,0.01,v=>v.toFixed(2));
+slider('c-look','grain','Зерно',0,1,0.01,v=>v.toFixed(2));
+['liftM','gammaM','gainM'].forEach(k=>{ const inp=$(k); inp.addEventListener('input',()=>{ P[k]=+inp.value; $(k+'Out').textContent=sg((+inp.value).toFixed(3).replace(/0+$/,'').replace(/\.$/,'')); schedule(); }); inp.addEventListener('dblclick',()=>{P[k]=0; syncUI(); schedule();}); });
+$('cstOn').addEventListener('change',e=>{ P.cst=e.target.checked; schedule(); });
+$('maskOn').addEventListener('change',e=>{ P.showMask=e.target.checked; schedule(); });
+$('splitR').addEventListener('input',e=>{ P.split=(+e.target.value)/100; $('splitOut').textContent=P.split>0?Math.round(P.split*100)+'%':'выкл'; schedule(); });
+
+// wheels
+document.querySelectorAll('.wheel').forEach(wh=>{
+  const key=wh.dataset.key; let drag=false;
+  const set=e=>{ const r=wh.getBoundingClientRect(); let x=(e.clientX-r.left-r.width/2)/(r.width/2), y=(e.clientY-r.top-r.height/2)/(r.height/2); const m=Math.hypot(x,y); if(m>1){x/=m;y/=m;} P[key]=[x,y]; syncWheels(); schedule(); };
+  wh.addEventListener('pointerdown',e=>{drag=true; wh.setPointerCapture(e.pointerId); set(e);});
+  wh.addEventListener('pointermove',e=>{ if(drag) set(e); });
+  wh.addEventListener('pointerup',()=>drag=false); wh.addEventListener('pointercancel',()=>drag=false);
+  wh.addEventListener('dblclick',()=>{ P[key]=[0,0]; syncWheels(); schedule(); });
+  wh.addEventListener('keydown',e=>{ const s=0.05; let [x,y]=P[key]; if(e.key==='ArrowLeft')x-=s; else if(e.key==='ArrowRight')x+=s; else if(e.key==='ArrowUp')y-=s; else if(e.key==='ArrowDown')y+=s; else if(e.key==='Escape'||e.key==='0'){x=0;y=0;} else return; e.preventDefault(); const m=Math.hypot(x,y); if(m>1){x/=m;y/=m;} P[key]=[x,y]; syncWheels(); schedule(); });
+});
+function syncWheels(){ document.querySelectorAll('.wheel').forEach(wh=>{ const v=P[wh.dataset.key]; const dot=wh.firstElementChild; dot.style.left=(50+v[0]*50)+'%'; dot.style.top=(50+v[1]*50)+'%'; }); }
+function syncUI(){
+  Object.keys(SL).forEach(k=>{ SL[k].inp.value=P[k]; SL[k].out.textContent=SL[k].fmt(P[k]); });
+  ['liftM','gammaM','gainM'].forEach(k=>{ $(k).value=P[k]; $(k+'Out').textContent=sg(+(+P[k]).toFixed(3)); });
+  $('cstOn').checked=P.cst; $('maskOn').checked=P.showMask;
+  $('splitR').value=Math.round(P.split*100); $('splitOut').textContent=P.split>0?Math.round(P.split*100)+'%':'выкл';
+  const r709=src&&src.rec709; $('cstOn').disabled=!!r709; $('cstNote').hidden=!r709;
+  syncWheels();
+}
+
+// looks
+const pos=(h,r)=>[Math.sin(h*Math.PI/180)*r,-Math.cos(h*Math.PI/180)*r];
+const LOOKS=[
+ ['Без лука',{lift:[0,0],gamma:[0,0],gain:[0,0],liftM:0,gammaM:0,gainM:0,vignette:0,grain:0}],
+ ['Teal & Orange',{lift:pos(190,0.55),gamma:[0,0],gain:pos(32,0.42),liftM:0,gammaM:0,gainM:0,contrast:1.16,sat:1.15,vignette:0.3,grain:0.15}],
+ ['Тёплый закат',{lift:pos(300,0.3),gamma:pos(35,0.28),gain:pos(38,0.5),liftM:0.01,gammaM:0.03,gainM:0,contrast:1.0,sat:1.18,vignette:0.35,grain:0.1}],
+ ['Холодная зима',{lift:pos(215,0.45),gamma:pos(210,0.3),gain:pos(200,0.25),liftM:0,gammaM:0,gainM:0.04,contrast:1.08,sat:0.82,vignette:0.2,grain:0.1}],
+ ['Выцветшая плёнка',{lift:pos(200,0.35),gamma:[0,0],gain:pos(45,0.25),liftM:0.07,gammaM:0.02,gainM:-0.03,contrast:0.92,sat:0.85,vignette:0.3,grain:0.45}],
+ ['Ч/Б',{lift:[0,0],gamma:[0,0],gain:[0,0],liftM:0,gammaM:0,gainM:0,contrast:1.28,sat:0,vignette:0.35,grain:0.3}]
+];
+LOOKS.forEach(([n,v])=>{ const b=document.createElement('button'); b.className='btn'; b.textContent=n; b.onclick=()=>{ Object.assign(P,JSON.parse(JSON.stringify(v))); if(cur) cur.touched=true; syncUI(); schedule(); }; $('looks').appendChild(b); });
+
+// buttons
+let origSaved=null;
+$('btnOrig').addEventListener('click',function(){ if(origSaved===null){ origSaved=P.split; P.split=1; this.setAttribute('aria-pressed','true'); } else { P.split=origSaved; origSaved=null; this.setAttribute('aria-pressed','false'); } schedule(); });
+$('btnReset').addEventListener('click',()=>{ if(cur&&cur.def) loadCh(cur.def,true); else { P=JSON.parse(JSON.stringify(DEF)); syncUI(); schedule(); } });
+let picking=false;
+$('btnPick').addEventListener('click',function(){ picking=!picking; this.setAttribute('aria-pressed',picking); $('viewerBox').classList.toggle('pick',picking); $('viewHint').hidden=!picking; });
+$('viewCv').addEventListener('click',e=>{
+  if(!picking||!src) return; const r=e.target.getBoundingClientRect(); const px=Math.round((e.clientX-r.left)/r.width*W), py=Math.round((e.clientY-r.top)/r.height*H);
+  let s=[0,0,0],n=0; for(let y=py-3;y<=py+3;y++) for(let x=px-3;x<=px+3;x++){ if(x<0||y<0||x>=W||y>=H) continue; const j=(y*W+x)*3; s[0]+=src.lin[j]; s[1]+=src.lin[j+1]; s[2]+=src.lin[j+2]; n++; }
+  const rr=Math.max(1e-4,s[0]/n), gg=Math.max(1e-4,s[1]/n), bb=Math.max(1e-4,s[2]/n);
+  const T=0.5*Math.log2(bb/rr), Tn=Math.log2(gg/Math.sqrt(rr*bb));
+  P.temp=Math.max(-100,Math.min(100,Math.round(T/0.01))); P.tint=Math.max(-100,Math.min(100,Math.round(Tn/0.01)));
+  picking=false; $('btnPick').setAttribute('aria-pressed','false'); $('viewerBox').classList.remove('pick'); $('viewHint').hidden=true;
+  if(cur) cur.touched=true; syncUI(); schedule();
+});
+
+// node chain → scroll to group
+document.querySelectorAll('#nodeChain .node').forEach(n=>n.addEventListener('click',()=>{ const g=$(n.dataset.grp); g.scrollIntoView({block:'center'}); g.animate([{boxShadow:'0 0 0 3px var(--accent)'},{boxShadow:'0 0 0 0 transparent'}],{duration:1200}); }));
+
+// challenges
+const chList=$('chList');
+CH.forEach(ch=>{ const b=document.createElement('button'); b.className='ch'; b.id='btn-'+ch.id; b.setAttribute('aria-pressed','false'); b.innerHTML=`<b>${ch.name}</b><small>${ch.sub}</small>`; b.onclick=()=>loadCh(ch); chList.appendChild(b); });
+document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>{ const ch=CH.find(c=>c.id===b.dataset.goto); loadCh(ch); $('lab').scrollIntoView({block:'start'}); }));
+
+function loadCh(ch,keepTask){
+  src=getSrc(ch); cur={def:ch,touched:false};
+  P=Object.assign(JSON.parse(JSON.stringify(DEF)),JSON.parse(JSON.stringify(ch.start||{})));
+  if(origSaved!==null){ origSaved=null; $('btnOrig').setAttribute('aria-pressed','false'); }
+  document.querySelectorAll('.ch').forEach(b=>b.setAttribute('aria-pressed', b.id==='btn-'+ch.id?'true':'false'));
+  renderTask(ch); syncUI(); schedule();
+}
+function renderTask(ch,fb){
+  const t=$('task'); t.innerHTML='';
+  const h=document.createElement('h4'); h.textContent=ch.name; t.appendChild(h);
+  const p=document.createElement('p'); p.textContent=ch.task; p.style.fontSize='15px'; t.appendChild(p);
+  if(ch.steps){ const ol=document.createElement('ol'); ch.steps.forEach(s=>{const li=document.createElement('li'); li.textContent=s; ol.appendChild(li);}); t.appendChild(ol); }
+  const seg=document.createElement('div'); seg.className='seg';
+  if(ch.id!=='own'){ const bc=document.createElement('button'); bc.className='btn primary'; bc.textContent='Проверить'; bc.onclick=()=>renderTask(ch,check(ch)); seg.appendChild(bc); }
+  if(ch.answer){ const ba=document.createElement('button'); ba.className='btn'; ba.textContent='Показать ответ'; ba.onclick=()=>{ applyAnswer(ch); renderTask(ch,check(ch)); }; seg.appendChild(ba); }
+  t.appendChild(seg);
+  if(fb){ const box=document.createElement('div'); box.className='fb'; fb.forEach(([c,txt])=>{ const d=document.createElement('div'); d.className=c; d.textContent=(c==='ok'?'✓ ':c==='bad'?'✗ ':'💡 ')+txt; box.appendChild(d); }); t.appendChild(box); }
+}
+function applyAnswer(ch){
+  if(ch.answer==='skin'){ let best=0,bd=1e9; for(let h=-40;h<=40;h++){ const a=region(src,Object.assign({},P,{skinHue:h,showMask:false}),REG.face).ang; const d=Math.abs(a-123); if(d<bd){bd=d;best=h;} } P.skinHue=best; P.showMask=false; }
+  else Object.assign(P,JSON.parse(JSON.stringify(ch.answer)));
+  syncUI(); schedule();
+}
+function check(ch){
+  const fb=[]; const Pc=Object.assign({},P,{split:0,showMask:false});
+  if(ch.id==='c7'){ fb.push(['tip','Тут нет правильного ответа. Сравни с исходником (Shift+D) и спроси себя: кожа нормальная? Глазам не больно?']);
+    const f=region(src,Pc,REG.face); const d=f.ang-123; fb.push(Math.abs(d)<=8?['ok','Кожа осталась около линии кожи — лук не испортил лицо.']:['bad','Лук утащил кожу от линии на '+Math.round(Math.abs(d))+'°. Ослабь цвет в колёсах или поправь «Оттенок кожи».']);
+    if(P.sat>1.5) fb.push(['bad','Цвета кислотные — убавь насыщенность.']); return fb; }
+  if(!src.rec709 && !P.cst) fb.push(['bad','Включи перевод CST (нода 03). Без него картинка остаётся серой: это всё ещё «английский язык» Log.']);
+  const g=region(src,Pc,REG.grey); const pc=Math.round(g.Y*100);
+  if(g.Y<0.38) fb.push(['bad','Серый квадрат слишком тёмный ('+pc+'%). Подними Экспозицию.']);
+  else if(g.Y>0.64) fb.push(['bad','Серый квадрат слишком светлый ('+pc+'%). Опусти Экспозицию.']);
+  else fb.push(['ok','Яркость в норме: серый квадрат на '+pc+'% (нужно 40–60%).']);
+  const mid=(g.r+g.b)/2, dev=Math.max(Math.abs(g.r-g.g),Math.abs(g.b-g.g),Math.abs(g.r-g.b));
+  if(dev>0.03){ let t; if(g.g>mid+0.015) t='зеленит → двигай Tint вправо'; else if(g.g<mid-0.015) t='уходит в пурпурный → двигай Tint влево'; else if(g.r>g.b) t='тёплый, оранжевый → двигай Temp влево'; else t='холодный, синий → двигай Temp вправо';
+    fb.push(['bad','Серый квадрат не серый: '+t+'. Или нажми «Пипетка» и кликни по нему.']); }
+  else fb.push(['ok','Баланс белого точный: на сером R, G и B почти равны.']);
+  if(ch.id==='c6'){ const f=region(src,Pc,REG.face); const d=f.ang-123;
+    if(Math.abs(d)<=5) fb.push(['ok','Кожа на линии кожи (угол '+Math.round(f.ang)+'°).']);
+    else fb.push(['bad','Кожа ушла от линии на '+Math.round(Math.abs(d))+'°: она слишком '+(d<0?'розовая → двигай «Оттенок кожи» вправо':'жёлтая → двигай «Оттенок кожи» влево')+'.']); }
+  if(ch.id==='c4') fb.push(['tip','Посмотри на волосы, тени и траву: там «песок». Это шум от того, что ведёрки были почти пустые. Сними светлее — и его не будет.']);
+  if(ch.id==='c5'){ const w=region(src,Pc,REG.white), s=region(src,Pc,REG.sky); fb.push(['tip','Белый квадрат теперь '+Math.round(w.Y*100)+'%: он стал серым и плоским, а небо потеряло цвет и облака. Это перелившиеся ведёрки — детали не вернуть ничем.']); }
+  if(P.cst||src.rec709){ if(P.contrast<1.03) fb.push(['tip','Добавь чуть контраста: 1,05–1,2.']); if(P.sat<1.03 && ch.id!=='c6') fb.push(['tip','Добавь чуть насыщенности: 1,05–1,25.']); }
+  if(P.sat>1.6) fb.push(['bad','Слишком кислотно. Насыщенность больше 1,6 почти всегда перебор.']);
+  if(P.contrast>1.5) fb.push(['bad','Контраст очень сильный: тени проваливаются. Попробуй 1,1–1,25.']);
+  return fb;
+}
+
+// upload
+$('upFile').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=()=>{ const img=new Image(); img.onload=()=>{
+    const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+    const s=Math.max(W/img.width,H/img.height); const w=img.width*s, h=img.height*s; x.drawImage(img,(W-w)/2,(H-h)/2,w,h);
+    const d=x.getImageData(0,0,W,H).data; const mode=$('upMode').value; const lin=new Float32Array(N*3), log8=new Uint8ClampedArray(N*4);
+    for(let i=0;i<N;i++){ for(let k=0;k<3;k++){ const v=d[i*4+k]/255; lin[i*3+k]= mode==='log'? dec(v) : Math.pow(v,2.4); log8[i*4+k]=d[i*4+k]; } log8[i*4+3]=255; }
+    src={lin,log8,rec709:mode!=='log',reg:REG};
+    const own={id:'own',name:'Свой кадр',task: mode==='log'?'Твой кадр в S-Log3. Иди по нодам по порядку: CST, экспозиция, баланс (пипеткой по белому или серому), контраст, насыщенность, кожа, лук.':'Твой обычный кадр. CST не нужен: начни с экспозиции и баланса.',steps:null,answer:null};
+    cur={def:null,touched:false}; P=JSON.parse(JSON.stringify(DEF)); P.cst=mode==='log';
+    document.querySelectorAll('.ch').forEach(b=>b.setAttribute('aria-pressed','false'));
+    renderTask(own); syncUI(); schedule();
+  }; img.src=rd.result; };
+  rd.readAsDataURL(f); e.target.value='';
+});
+
+// render + scopes
+const vcv=$('viewCv'), vctx=vcv.getContext('2d'), vimg=vctx.createImageData(W,H);
+let scopeMode='wave';
+$('tabWave').onclick=()=>{scopeMode='wave'; $('tabWave').setAttribute('aria-pressed','true'); $('tabParade').setAttribute('aria-pressed','false'); drawScopes();};
+$('tabParade').onclick=()=>{scopeMode='parade'; $('tabParade').setAttribute('aria-pressed','true'); $('tabWave').setAttribute('aria-pressed','false'); drawScopes();};
+let pend=false;
+function schedule(){ if(pend) return; pend=true; requestAnimationFrame(()=>{ pend=false; if(!src) return; render(src,P,vimg.data); vctx.putImageData(vimg,0,0); drawScopes(); drawCurve(); }); }
+function drawScopes(){
+  const d=vimg.data;
+  // waveform / parade
+  const wc=$('waveCv'), wx=wc.getContext('2d'), SW=wc.width, SH=wc.height, top=8, bot=8, PH=SH-top-bot;
+  const acc=new Float32Array(SW*SH*3);
+  for(let y=0;y<H;y+=2) for(let x=0;x<W;x++){ const o=(y*W+x)*4; const r=d[o]/255,g=d[o+1]/255,b=d[o+2]/255;
+    if(scopeMode==='wave'){ const Y=0.2126*r+0.7152*g+0.0722*b; const col=Math.floor(x/W*SW); const lv=top+Math.round((1-Y)*PH); const k=(lv*SW+col)*3; acc[k]+=1; acc[k+1]+=1; acc[k+2]+=1; }
+    else { const tw=SW/3; [r,g,b].forEach((v,ch)=>{ const col=Math.floor(ch*tw+x/W*(tw-4)); const lv=top+Math.round((1-v)*PH); acc[(lv*SW+col)*3+ch]+=1; }); } }
+  const im=wx.createImageData(SW,SH), q=im.data;
+  for(let i=0;i<SW*SH;i++){ const a=acc[i*3],b2=acc[i*3+1],c=acc[i*3+2];
+    if(scopeMode==='wave'){ const v=1-Math.exp(-a*0.09); q[i*4]=12+v*200; q[i*4+1]=14+v*235; q[i*4+2]=17+v*210; }
+    else { q[i*4]=12+(1-Math.exp(-a*0.12))*243+ (1-Math.exp(-b2*0.12))*20; q[i*4+1]=14+(1-Math.exp(-b2*0.12))*230+(1-Math.exp(-c*0.12))*40; q[i*4+2]=17+(1-Math.exp(-c*0.12))*238+(1-Math.exp(-a*0.12))*10; }
+    q[i*4+3]=255; }
+  wx.putImageData(im,0,0);
+  wx.strokeStyle='rgba(140,150,165,.28)'; wx.fillStyle='rgba(160,170,185,.75)'; wx.font='10px "JetBrains Mono", monospace'; wx.lineWidth=1;
+  [0,25,50,75,100].forEach(p=>{ const y=Math.round(top+(1-p/100)*PH)+0.5; wx.beginPath(); wx.moveTo(0,y); wx.lineTo(SW,y); wx.stroke(); wx.fillText(p+'%',3,y-2); });
+  if(scopeMode==='parade'){ wx.fillStyle='rgba(255,120,120,.8)'; wx.fillText('R',SW/6,SH-1); wx.fillStyle='rgba(120,230,140,.8)'; wx.fillText('G',SW/2,SH-1); wx.fillStyle='rgba(130,160,255,.9)'; wx.fillText('B',SW*5/6,SH-1); wx.strokeStyle='rgba(140,150,165,.35)'; [SW/3,SW*2/3].forEach(x=>{wx.beginPath(); wx.moveTo(x+0.5,0); wx.lineTo(x+0.5,SH); wx.stroke();}); }
+  // vectorscope
+  const vc=$('vecCv'), vx=vc.getContext('2d'), S=vc.width, c0=S/2, R=S*0.45, sc=R/0.5;
+  const va=new Float32Array(S*S*3);
+  for(let y=0;y<H;y+=2) for(let x=0;x<W;x+=2){ const o=(y*W+x)*4; const r=d[o]/255,g=d[o+1]/255,b=d[o+2]/255; const Y=0.2126*r+0.7152*g+0.0722*b; const cb=(b-Y)/1.8556, cr=(r-Y)/1.5748;
+    const px=Math.round(c0+cb*sc*1.6), py=Math.round(c0-cr*sc*1.6); if(px<0||py<0||px>=S||py>=S) continue; const k=(py*S+px)*3; va[k]+=0.4+r; va[k+1]+=0.4+g; va[k+2]+=0.4+b; }
+  const vi=vx.createImageData(S,S), vq=vi.data;
+  for(let i=0;i<S*S;i++){ for(let k=0;k<3;k++){ vq[i*4+k]=[12,14,17][k]+(1-Math.exp(-va[i*3+k]*0.12))*240; } vq[i*4+3]=255; }
+  vx.putImageData(vi,0,0);
+  vx.strokeStyle='rgba(140,150,165,.35)'; vx.lineWidth=1; vx.beginPath(); vx.arc(c0,c0,R,0,Math.PI*2); vx.stroke();
+  vx.beginPath(); vx.moveTo(c0-R,c0); vx.lineTo(c0+R,c0); vx.moveTo(c0,c0-R); vx.lineTo(c0,c0+R); vx.stroke();
+  vx.strokeStyle='rgba(240,161,74,.85)'; vx.lineWidth=1.5; vx.beginPath(); vx.moveTo(c0,c0); vx.lineTo(c0+Math.cos(SKIN)*R, c0-Math.sin(SKIN)*R); vx.stroke();
+  vx.font='10px "JetBrains Mono", monospace';
+  [['R',[1,0,0]],['Yl',[1,1,0]],['G',[0,1,0]],['Cy',[0,1,1]],['B',[0,0,1]],['Mg',[1,0,1]]].forEach(([n,c])=>{ const r=c[0]*0.75,g=c[1]*0.75,b=c[2]*0.75; const Y=0.2126*r+0.7152*g+0.0722*b; const cb=(b-Y)/1.8556, cr=(r-Y)/1.5748; const px=c0+cb*sc*1.6, py=c0-cr*sc*1.6;
+    const ang=Math.atan2(c0-py,px-c0); const lx=c0+Math.cos(ang)*Math.min(R+0,Math.hypot(px-c0,py-c0)), ly=c0-Math.sin(ang)*Math.min(R,Math.hypot(px-c0,py-c0));
+    vx.strokeStyle='rgba(170,180,195,.55)'; vx.strokeRect(lx-5,ly-5,10,10); vx.fillStyle='rgba(170,180,195,.85)'; vx.fillText(n,lx+7,ly+3); });
+  vx.fillStyle='rgba(240,161,74,.95)'; vx.fillText('кожа',c0+Math.cos(SKIN)*R*0.55-28,c0-Math.sin(SKIN)*R*0.55);
+}
+function drawCurve(){
+  const cv=$('curveCv'), x=cv.getContext('2d'), CW=cv.width, CHh=cv.height; x.fillStyle='#0c0e11'; x.fillRect(0,0,CW,CHh);
+  x.strokeStyle='rgba(140,150,165,.25)'; x.lineWidth=1; for(let i=1;i<4;i++){ x.beginPath(); x.moveTo(i*CW/4,0); x.lineTo(i*CW/4,CHh); x.moveTo(0,i*CHh/4); x.lineTo(CW,i*CHh/4); x.stroke(); }
+  x.beginPath(); x.moveTo(0,CHh); x.lineTo(CW,0); x.stroke();
+  const f=v=>{ let y=(v-0.435)*P.contrast+0.435; y+=P.liftM*(1-y); y*=1+P.gainM; if(y>0) y=Math.pow(y,Math.pow(2,-P.gammaM*1.6)); return y; };
+  x.strokeStyle='#f0a14a'; x.lineWidth=2; x.beginPath(); for(let i=0;i<=60;i++){ const v=i/60; const y=Math.max(-0.05,Math.min(1.05,f(v))); const px=v*CW, py=CHh-y*CHh; i?x.lineTo(px,py):x.moveTo(px,py); } x.stroke();
+  x.fillStyle='rgba(160,170,185,.8)'; x.font='10px "JetBrains Mono", monospace'; x.fillText('тени',4,CHh-4); x.fillText('света',CW-34,CHh-4);
+}
+
+loadCh(CH[0]);
+})();
+</script>
