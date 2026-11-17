@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Звёздная кузница</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="top">
+      <div class="coins"><span class="coin"></span><span id="coins">0</span></div>
+      <div class="income"><span id="income">0</span> <span data-i18n="perSec">/сек</span> <span id="boost-badge" class="boost-badge">x2 <span id="boost-time"></span></span></div>
+      <div class="progress-row">
+        <span><span data-i18n="discovered">Открыто</span>: <b id="discovered">1</b></span>
+        <div class="meteor-bar"><div id="meteor-fill"></div></div>
+      </div>
+    </header>
+
+    <div id="board-wrap"><canvas id="board"></canvas></div>
+
+    <footer id="controls">
+      <button id="btn-buy" class="btn btn-primary">
+        <span data-i18n="buy">Создать</span>
+        <small><span class="coin small"></span><span id="buy-price">0</span></small>
+      </button>
+      <button id="btn-upgrade" class="btn">
+        <span data-i18n="upgrade">Улучшить</span>
+        <small id="upgrade-info"></small>
+      </button>
+      <div class="ad-row">
+        <button id="btn-boost" class="btn btn-ad"><span data-i18n="boost">x2 доход</span><span class="ad-badge">AD</span></button>
+        <button id="btn-gift" class="btn btn-ad"><span data-i18n="gift">🎁 Подарок</span><span class="ad-badge">AD</span></button>
+        <button id="btn-sound" class="btn btn-icon" aria-label="sound">🔊</button>
+      </div>
+    </footer>
+
+    <div id="toast"></div>
+
+    <div id="popup" class="overlay">
+      <div class="panel">
+        <h2 id="popup-title"></h2>
+        <canvas id="popup-icon" width="160" height="160"></canvas>
+        <p id="popup-text"></p>
+        <div id="popup-buttons"></div>
+      </div>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
