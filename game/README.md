@@ -16,7 +16,9 @@
 | Архив для загрузки | `dist/iskra-game.zip` |
 | Иконка 512×512 | `promo/icon-512.png` |
 | Обложка 800×470 | `promo/cover-800x470.png` |
-| Скриншоты | `promo/screenshot-phone.png`, `promo/screenshot-desktop.png` |
+| Скриншоты (RU/EN, компьютер и телефон) | `promo/screenshots/` |
+| Видео геймплея | `promo/video-horizontal.mp4`, `promo/video-vertical.mp4` |
+| Тексты карточки (с проверкой лимитов) | `promo/texts.md` |
 
 ## Как опубликовать (пошагово)
 
