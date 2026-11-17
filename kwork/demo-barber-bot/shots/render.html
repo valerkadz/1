@@ -1,0 +1,76 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{margin:0;box-sizing:border-box}
+body{font-family:"DejaVu Sans",Arial,sans-serif;background:transparent}
+.phone{width:300px;height:620px;border-radius:38px;background:#111;padding:10px;box-shadow:0 18px 40px rgba(0,0,0,.35);display:inline-block;vertical-align:top}
+.scr{width:100%;height:100%;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;background:#cfdcc2 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='10' cy='10' r='2' fill='%23b9caa9'/%3E%3Ccircle cx='40' cy='35' r='2' fill='%23b9caa9'/%3E%3C/svg%3E")}
+.top{background:#fff;padding:22px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e3e3e3}
+.ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ff9a3c,#e2532d);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:16px}
+.nm{font-size:13px;font-weight:700;color:#111}.st{font-size:10px;color:#3a8ee6}
+.chat{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:5px;justify-content:flex-end;overflow:hidden}
+.b{max-width:85%;padding:6px 9px;border-radius:12px;font-size:11px;line-height:1.38;color:#111;background:#fff;white-space:pre-wrap;box-shadow:0 1px 1px rgba(0,0,0,.1)}
+.u{align-self:flex-end;background:#e2fec9}
+.ik{display:grid;gap:3px;max-width:85%;margin-top:-2px}
+.ik div{background:rgba(70,100,60,.45);color:#fff;font-size:10.5px;text-align:center;padding:6px 3px;border-radius:8px;font-weight:600}
+.rk{background:#f1f1f1;padding:6px;display:grid;gap:4px}
+.rk div{background:#fff;border-radius:7px;font-size:10.5px;text-align:center;padding:8px 2px;box-shadow:0 1px 1px rgba(0,0,0,.12)}
+.in{background:#fff;padding:9px 12px;font-size:11px;color:#999;border-top:1px solid #e5e5e5}
+b{font-weight:700}
+</style></head><body><div id="root"></div>
+<script>
+const H=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\[b\]/g,'<b>').replace(/\[\/b\]/g,'</b>');
+function phone(title,status,items,bottom){
+ let c=items.map(i=>{
+  if(i.ik) return `<div class="ik" style="grid-template-columns:repeat(${i.cols||1},1fr)">${i.ik.map(t=>`<div>${H(t)}</div>`).join('')}</div>`;
+  return `<div class="b ${i.u?'u':''}">${H(i.t)}</div>`}).join('');
+ let bt=bottom?`<div class="rk" style="grid-template-columns:repeat(${bottom.cols||2},1fr)">${bottom.keys.map(k=>`<div style="${k.w?'grid-column:span '+k.w:''}">${k.t}</div>`).join('')}</div>`:'<div class="in">Сообщение</div>';
+ return `<div class="phone"><div class="scr"><div class="top"><div class="ava">${title[0]}</div><div><div class="nm">${title}</div><div class="st">${status}</div></div></div><div class="chat">${c}</div>${bt}</div></div>`;
+}
+const MENU={cols:2,keys:[{t:'📅 Записаться',w:2},{t:'✂️ Услуги и цены'},{t:'🗂 Мои записи'},{t:'📍 Контакты',w:2}]};
+const S={
+ menu:phone('Барбершоп «Борода»','бот',[
+  {t:'/start',u:1},
+  {t:'Здравствуйте! Это бот Барбершоп «Борода» 💈\n\nЗдесь можно записаться на стрижку за минуту, посмотреть цены и свои записи.'},
+  {t:'✂️ Услуги и цены',u:1},
+  {t:'✂️ [b]Услуги и цены[/b]\n\n• Мужская стрижка — 1200 ₽ (60 мин)\n• Стрижка бороды — 700 ₽ (30 мин)\n• Стрижка + борода — 1700 ₽ (90 мин)\n• Детская стрижка — 900 ₽ (45 мин)'},
+ ],MENU),
+ book:phone('Барбершоп «Борода»','бот',[
+  {t:'📅 Записаться',u:1},
+  {t:'Выберите услугу:'},
+  {ik:['Мужская стрижка — 1200 ₽','Стрижка бороды — 700 ₽','Стрижка + борода — 1700 ₽','Детская стрижка — 900 ₽']},
+  {t:'18 ноября (Ср)\nВыберите время:'},
+  {ik:['12:00','12:30','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30'],cols:4},
+  {ik:['⬅️ Другой день']},
+ ],MENU),
+ done:phone('Барбершоп «Борода»','бот',[
+  {t:'Как к вам обращаться? Напишите имя:'},
+  {t:'Иван',u:1},
+  {t:'Отправьте номер телефона кнопкой ниже или напишите его:'},
+  {t:'📱 +7 900 123-45-67',u:1},
+  {t:'Почти готово!'},
+  {t:'✅ Вы записаны!\n\n18 ноября (Ср), 15:30 — Стрижка + борода, 1700 ₽\n📍 ул. Ленина, 15\n\nОтменить запись можно в разделе «🗂 Мои записи».'},
+ ],MENU),
+ admin:phone('Барбершоп «Борода»','бот · админ',[
+  {t:'🆕 [b]Новая запись[/b]\n18 ноября (Ср), 15:30 — Стрижка + борода, 1700 ₽\n👤 Иван, +7 900 123-45-67'},
+  {t:'/admin',u:1},
+  {t:'🔧 Админ-панель. Выберите день, чтобы посмотреть записи:'},
+  {ik:['Сегодня, 17 ноя','Завтра, 18 ноя','Чт, 19 ноя','Пт, 20 ноя'],cols:2},
+  {t:'📋 [b]18 ноября (Ср)[/b]\n\n11:00 — Мужская стрижка, Олег, +7 900 555-11-22\n14:00 — Стрижка бороды, Артём, +7 900 777-33-44\n15:30 — Стрижка + борода, Иван, +7 900 123-45-67'},
+  {ik:['❌ 11:00 Олег','❌ 14:00 Артём','❌ 15:30 Иван']},
+ ],null),
+};
+const mode=location.hash.slice(1);
+const root=document.getElementById('root');
+if(mode==='cover'){
+ document.body.style.cssText='width:660px;height:440px;overflow:hidden;background:linear-gradient(135deg,#1f2a44,#2f4f7a)';
+ root.innerHTML=`<div style="position:absolute;left:28px;top:30px;color:#fff;width:240px">
+  <div style="font-size:12px;letter-spacing:2px;color:#ffb36b;font-weight:700">ДЕМО-ПРОЕКТ</div>
+  <div style="font-size:28px;font-weight:800;line-height:1.15;margin-top:8px">Бот онлайн-записи для барбершопа</div>
+  <div style="font-size:13px;line-height:1.7;margin-top:14px;color:#dfe7f5">✓ Выбор услуги, дня и времени<br>✓ Занятое время скрыто<br>✓ Уведомления админу<br>✓ Админ-панель в боте</div>
+  <div style="margin-top:16px;font-size:11px;color:#9fb3d6">Python · aiogram 3 · SQLite</div></div>
+  <div style="position:absolute;left:290px;top:20px;transform:scale(.62);transform-origin:0 0">${S.book}</div>
+  <div style="position:absolute;left:470px;top:34px;transform:scale(.62);transform-origin:0 0">${S.done}</div>`;
+} else {
+ document.body.style.cssText='width:340px;height:660px;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#eef2f8,#d7e0ee)';
+ root.innerHTML=S[mode];
+}
+</script></body></html>
