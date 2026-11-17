@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Искра: Провода света</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Главное меню -->
+    <section id="screen-menu" class="screen active">
+      <div class="logo">
+        <div class="logo-spark"></div>
+        <h1 data-i18n="title">Искра</h1>
+        <p class="subtitle" data-i18n="subtitle">Провода света</p>
+      </div>
+      <div class="menu-stars"><span class="star-icon">★</span> <span id="menu-stars">0</span></div>
+      <button id="btn-play" class="btn btn-primary"><span data-i18n="play">Играть</span> <small id="btn-play-level"></small></button>
+      <button id="btn-levels" class="btn" data-i18n="levels">Уровни</button>
+      <button id="btn-sound" class="btn btn-small"></button>
+      <p class="hint-text" data-i18n="howto">Поворачивай плитки касанием и проведи свет ко всем лампочкам</p>
+    </section>
+
+    <!-- Выбор уровня -->
+    <section id="screen-levels" class="screen">
+      <header class="topbar">
+        <button class="icon-btn" id="btn-levels-back" aria-label="back">←</button>
+        <h2 data-i18n="levels">Уровни</h2>
+        <span class="topbar-stars"><span class="star-icon">★</span> <span id="levels-stars">0</span></span>
+      </header>
+      <div id="level-grid"></div>
+    </section>
+
+    <!-- Игра -->
+    <section id="screen-game" class="screen">
+      <header class="topbar">
+        <button class="icon-btn" id="btn-game-back" aria-label="menu">☰</button>
+        <div class="level-info">
+          <div id="level-title">1</div>
+          <div class="moves"><span data-i18n="moves">Ходы</span>: <span id="moves">0</span></div>
+        </div>
+        <div class="topbar-right">
+          <button class="icon-btn" id="btn-restart" aria-label="restart">↻</button>
+          <button class="icon-btn hint-btn" id="btn-hint" aria-label="hint">💡<span class="ad-badge">AD</span></button>
+        </div>
+      </header>
+      <div id="board-wrap"><canvas id="board"></canvas></div>
+    </section>
+
+    <!-- Победа -->
+    <div id="win-overlay" class="overlay">
+      <div class="panel">
+        <h2 data-i18n="complete">Уровень пройден!</h2>
+        <div class="win-stars"><span>★</span><span>★</span><span>★</span></div>
+        <p><span data-i18n="moves">Ходы</span>: <b id="win-moves">0</b> &nbsp;·&nbsp; <span data-i18n="best">Минимум</span>: <b id="win-min">0</b></p>
+        <button id="btn-next" class="btn btn-primary" data-i18n="next">Дальше</button>
+        <button id="btn-replay" class="btn btn-small" data-i18n="replay">Ещё раз</button>
+      </div>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
