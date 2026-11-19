@@ -20,29 +20,42 @@ def digits(phone):
 
 def render(d):
     t = d["theme"]
-    phone_digits = digits(d["phone"])
-    wa = f"https://wa.me/{phone_digits}?text=" + e("Здравствуйте! Хочу записаться")
+    phone_digits = digits(d.get("phone", ""))
+    wa = (f"https://wa.me/{phone_digits}?text=" + e("Здравствуйте! Хочу записаться")) if phone_digits else None
     tg = f"https://t.me/{d['telegram']}" if d.get("telegram") else None
-    booking = d.get("booking_url") or wa
+    booking = d.get("booking_url") or wa or tg
     map_url = "https://yandex.ru/maps/?text=" + e(f"{d['city']}, {d['address']}")
 
     services = ""
     for group in d["services"]:
+        if group.get("scale"):
+            n = len(group["items"])
+            rows = "".join(
+                f"""<li class="scale-row"><b class="size">{e(s['name'])}</b><div class="bar"><i style="width:{int(35 + 65 * k / max(1, n - 1))}%"></i></div><span>{e(s['price'])}</span></li>"""
+                for k, s in enumerate(group["items"])
+            )
+            note = f'<p class="group-note">{e(group["note"])}</p>' if group.get("note") else ""
+            services += f"""<div class="card price-group"><h3>{e(group['title'])}</h3><ul>{rows}</ul>{note}</div>"""
+            continue
         rows = "".join(
             f"""<li><div><b>{e(s['name'])}</b>{f'<small>{e(s["note"])}</small>' if s.get('note') else ''}</div><span>{e(s['price'])}</span></li>"""
             for s in group["items"]
         )
-        services += f"""<div class="card price-group"><h3>{e(group['title'])}</h3><ul>{rows}</ul></div>"""
+        note = f'<p class="group-note">{e(group["note"])}</p>' if group.get("note") else ""
+        services += f"""<div class="card price-group"><h3>{e(group['title'])}</h3><ul>{rows}</ul>{note}</div>"""
 
     features = "".join(
         f"""<div class="feature"><div class="f-ico">{f['icon']}</div><h3>{e(f['title'])}</h3><p>{e(f['text'])}</p></div>"""
         for f in d["features"]
     )
+    photos = any(g.get("img") for g in d["gallery"])
     gallery = "".join(
-        f"""<figure class="g-item" style="background:{g.get('bg', 'var(--grad)')}"><span>{g['icon']}</span><figcaption>{e(g['label'])}</figcaption></figure>"""
+        (f"""<figure class="g-item photo"><img src="{e(g['img'])}" alt="{e(g.get('label', d['name']))}" loading="lazy">{f'<figcaption>{e(g["label"])}</figcaption>' if g.get('label') else ''}</figure>"""
+         if g.get("img") else
+         f"""<figure class="g-item" style="background:{g.get('bg', 'var(--grad)')}"><span>{g['icon']}</span><figcaption>{e(g['label'])}</figcaption></figure>""")
         for g in d["gallery"]
     )
-    reviews = "".join(
+    reviews = "" if not d.get("reviews") else "".join(
         f"""<blockquote class="card review"><div class="stars">★★★★★</div><p>«{e(r['text'])}»</p><cite>{e(r['name'])}</cite></blockquote>"""
         for r in d["reviews"]
     )
@@ -59,8 +72,12 @@ def render(d):
         demo = """<div class="demo-bar">Пример сайта. Название, контакты и отзывы вымышлены.</div>"""
 
     socials = ""
-    if tg:
+    if wa and booking != wa:
+        socials += f'<a class="btn ghost" href="{wa}" target="_blank" rel="noopener">WhatsApp</a>'
+    if tg and booking != tg:
         socials += f'<a class="btn ghost" href="{tg}" target="_blank" rel="noopener">Telegram</a>'
+    for label, url in [l for l in d.get("links", []) if l[1] != booking]:
+        socials += f'<a class="btn ghost" href="{e(url)}" target="_blank" rel="noopener">{e(label)}</a>'
     if d.get("vk"):
         socials += f'<a class="btn ghost" href="https://vk.com/{e(d["vk"])}" target="_blank" rel="noopener">ВКонтакте</a>'
 
@@ -75,17 +92,17 @@ def render(d):
 <meta property="og:description" content="{e(d['seo'])}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>{d['hero_icon']}</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family={t['font_head'].replace(' ', '+')}:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family={t['font_head'].replace(' ', '+')}:wght@600;700;800&family={t.get('font_body', 'Manrope').replace(' ', '+')}:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {{
   --bg: {t['bg']}; --surface: {t['surface']}; --text: {t['text']}; --muted: {t['muted']};
   --accent: {t['accent']}; --accent-text: {t['accent_text']}; --line: {t['line']};
-  --grad: {t['grad']};
+  --grad: {t['grad']}; --on-grad: {t.get('on_grad', '#ffffff')};
   --head: "{t['font_head']}", Georgia, serif;
 }}
 * {{ box-sizing: border-box; margin: 0; padding: 0; }}
 html {{ scroll-behavior: smooth; }}
-body {{ background: var(--bg); color: var(--text); font: 16px/1.6 Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }}
+body {{ background: var(--bg); color: var(--text); font: 16px/1.6 "{t.get('font_body', 'Manrope')}", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }}
 a {{ color: inherit; }}
 .wrap {{ max-width: 1080px; margin: 0 auto; padding: 0 20px; }}
 h1, h2, h3 {{ font-family: var(--head); line-height: 1.15; }}
@@ -139,7 +156,7 @@ nav a:hover {{ color: var(--text); }}
 .reviews {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }}
 .review .stars {{ color: #f5b301; letter-spacing: 2px; margin-bottom: 8px; }}
 .review cite {{ display: block; margin-top: 12px; font-style: normal; font-weight: 700; }}
-.cta {{ background: var(--grad); border-radius: 32px; padding: 48px 32px; text-align: center; color: #fff; }}
+.cta {{ background: var(--grad); border-radius: 32px; padding: 48px 32px; text-align: center; color: var(--on-grad); }}
 .cta h2 {{ margin-bottom: 12px; }}
 .cta p {{ opacity: .9; margin-bottom: 26px; font-size: 18px; }}
 .cta .btn {{ background: #fff; color: #111; border-color: #fff; }}
@@ -147,10 +164,24 @@ nav a:hover {{ color: var(--text); }}
 .contacts dl {{ display: grid; gap: 16px; }}
 .contacts dt {{ color: var(--muted); font-size: 14px; }}
 .contacts dd {{ font-weight: 700; font-size: 18px; }}
-.map {{ border-radius: 24px; background: var(--grad); min-height: 260px; display: grid; place-items: center; text-align: center; color: #fff; text-decoration: none; font-weight: 700; padding: 20px; }}
+.map {{ border-radius: 24px; background: var(--grad); min-height: 260px; display: grid; place-items: center; text-align: center; color: var(--on-grad); text-decoration: none; font-weight: 700; padding: 20px; }}
 .map span {{ display: block; font-size: 48px; }}
 footer {{ padding: 32px 0 100px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }}
 footer .wrap {{ display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }}
+.hero-art.photo::before, .hero-art.photo::after {{ display: none; }}
+.hero-art.photo img {{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }}
+.gallery.photos {{ grid-template-columns: repeat(4, 1fr); }}
+.g-item.photo {{ aspect-ratio: 3/4; grid-row: auto; cursor: zoom-in; background: var(--line); }}
+.g-item.photo img {{ width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }}
+.g-item.photo:hover img {{ transform: scale(1.05); }}
+.lightbox {{ position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.9); display: none; align-items: center; justify-content: center; padding: 20px; cursor: zoom-out; }}
+.lightbox.on {{ display: flex; }}
+.lightbox img {{ max-width: 100%; max-height: 100%; border-radius: 16px; }}
+.group-note {{ color: var(--muted); font-size: 14px; margin-top: 10px; }}
+.scale-row {{ align-items: center; }}
+.scale-row .size {{ width: 44px; text-transform: uppercase; }}
+.scale-row .bar {{ flex: 1; height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }}
+.scale-row .bar i {{ display: block; height: 100%; border-radius: 99px; background: var(--grad); }}
 .sticky-cta {{ display: none; }}
 .sticky-cta.hide {{ opacity: 0; pointer-events: none; transform: translateY(20px); }}
 .sticky-cta {{ transition: opacity .25s, transform .25s; }}
@@ -160,7 +191,7 @@ footer .wrap {{ display: flex; justify-content: space-between; flex-wrap: wrap; 
   .hero .wrap {{ grid-template-columns: 1fr; gap: 32px; }}
   .hero-art {{ aspect-ratio: 16/11; order: -1; }}
   section {{ padding: 52px 0; }}
-  .gallery {{ grid-template-columns: 1fr 1fr; }}
+  .gallery, .gallery.photos {{ grid-template-columns: 1fr 1fr; }}
   .contacts {{ grid-template-columns: 1fr; }}
   .sticky-cta {{ display: flex; position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 30; box-shadow: 0 12px 30px -8px rgba(0,0,0,.45); }}
   .top .btn.small {{ display: none; }}
@@ -171,7 +202,7 @@ footer .wrap {{ display: flex; justify-content: space-between; flex-wrap: wrap; 
 {demo}
 <header class="top"><div class="wrap">
   <a class="logo" href="#">{d['hero_icon']} {e(d['name'])}</a>
-  <nav><a href="#prices">Цены</a><a href="#about">О нас</a><a href="#gallery">Работы</a><a href="#reviews">Отзывы</a><a href="#contacts">Контакты</a></nav>
+  <nav><a href="#prices">Цены</a><a href="#about">О нас</a><a href="#gallery">Работы</a>{'<a href="#reviews">Отзывы</a>' if d.get('reviews') else ''}<a href="#contacts">Контакты</a></nav>
   <a class="btn small" href="{booking}" target="_blank" rel="noopener">{e(d['cta'])}</a>
 </div></header>
 
@@ -184,9 +215,9 @@ footer .wrap {{ display: flex; justify-content: space-between; flex-wrap: wrap; 
       <a class="btn" href="{booking}" target="_blank" rel="noopener">{e(d['cta'])}</a>
       <a class="btn ghost" href="#prices">Смотреть цены</a>
     </div>
-    <div class="hero-meta">{''.join(f'<div><b>{e(m[0])}</b>{e(m[1])}</div>' for m in d['stats'])}</div>
+    <div class="hero-meta">{''.join(f'<div><b>{e(m[0])}</b>{e(m[1])}</div>' for m in d.get('stats', []))}</div>
   </div>
-  <div class="hero-art"><span>{d['hero_icon']}</span><div class="badge">{e(d['badge'])}</div></div>
+  <div class="hero-art{' photo' if d.get('hero_img') else ''}">{f'<img src="{e(d["hero_img"])}" alt="{e(d["name"])}">' if d.get('hero_img') else f'<span>{d["hero_icon"]}</span>'}<div class="badge">{e(d['badge'])}</div></div>
 </div></section>
 
 <section id="prices"><div class="wrap">
@@ -201,15 +232,12 @@ footer .wrap {{ display: flex; justify-content: space-between; flex-wrap: wrap; 
 
 <section id="gallery"><div class="wrap">
   <h2>{e(d.get('gallery_title', 'Наши работы'))}</h2>
-  <div class="gallery">{gallery}</div>
+  <div class="gallery{' photos' if photos else ''}">{gallery}</div>
 </div></section>
 
 {team}
 
-<section id="reviews"><div class="wrap">
-  <h2>Отзывы</h2>
-  <div class="reviews">{reviews}</div>
-</div></section>
+{f'<section id="reviews"><div class="wrap"><h2>Отзывы</h2><div class="reviews">{reviews}</div></div></section>' if reviews else ''}
 
 <section><div class="wrap">
   <div class="cta">
@@ -224,21 +252,27 @@ footer .wrap {{ display: flex; justify-content: space-between; flex-wrap: wrap; 
   <div class="contacts">
     <div class="card"><dl>
       <div><dt>Адрес</dt><dd>{e(d['city'])}, {e(d['address'])}</dd></div>
-      <div><dt>Телефон</dt><dd><a href="tel:+{phone_digits}">{e(d['phone'])}</a></dd></div>
+      {f'<div><dt>Телефон</dt><dd><a href="tel:+{phone_digits}">{e(d["phone"])}</a></dd></div>' if phone_digits else ''}
       <div><dt>Часы работы</dt><dd>{e(d['hours'])}</dd></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="{wa}" target="_blank" rel="noopener">WhatsApp</a>{socials}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="{booking}" target="_blank" rel="noopener">{e(d['cta'])}</a>{socials}</div>
     </dl></div>
     <a class="map" href="{map_url}" target="_blank" rel="noopener"><div><span>📍</span>Открыть на Яндекс Картах</div></a>
   </div>
 </div></section>
 
 <footer><div class="wrap"><span>© {e(d['name'])}, {e(d['city'])}</span><span>{e(d['hours'])}</span></div></footer>
+<div class="lightbox" id="lb"><img alt=""></div>
 <a class="btn sticky-cta hide" id="sticky" href="{booking}" target="_blank" rel="noopener">{e(d['cta'])}</a>
 <script>
 (function () {{
   var b = document.getElementById('sticky');
   function u() {{ b.classList.toggle('hide', window.scrollY < 500 || (innerHeight + scrollY) > document.body.scrollHeight - 200); }}
   addEventListener('scroll', u, {{ passive: true }}); u();
+  var lb = document.getElementById('lb');
+  document.querySelectorAll('.g-item.photo img').forEach(function (im) {{
+    im.addEventListener('click', function () {{ lb.firstChild.src = im.src; lb.classList.add('on'); }});
+  }});
+  lb.addEventListener('click', function () {{ lb.classList.remove('on'); }});
 }})();
 </script>
 </body>
@@ -252,6 +286,11 @@ def main():
         d = json.loads(f.read_text(encoding="utf-8"))
         dest = OUT / d["slug"]
         dest.mkdir(parents=True, exist_ok=True)
+        img_src = ROOT / "assets" / d["slug"]
+        if img_src.is_dir():
+            (dest / "img").mkdir(exist_ok=True)
+            for im in img_src.iterdir():
+                (dest / "img" / im.name).write_bytes(im.read_bytes())
         (dest / "index.html").write_text(render(d), encoding="utf-8")
         print("✓", d["slug"])
 

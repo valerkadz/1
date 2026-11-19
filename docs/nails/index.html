@@ -14,12 +14,12 @@
 :root {
   --bg: #fbf7f4; --surface: #ffffff; --text: #2b2321; --muted: #7d706b;
   --accent: #3fae8f; --accent-text: #ffffff; --line: #eadfd8;
-  --grad: linear-gradient(135deg,#9be3cf,#3fae8f);
+  --grad: linear-gradient(135deg,#9be3cf,#3fae8f); --on-grad: #ffffff;
   --head: "Cormorant Garamond", Georgia, serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font: 16px/1.6 Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--text); font: 16px/1.6 "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 h1, h2, h3 { font-family: var(--head); line-height: 1.15; }
@@ -73,7 +73,7 @@ nav a:hover { color: var(--text); }
 .reviews { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
 .review .stars { color: #f5b301; letter-spacing: 2px; margin-bottom: 8px; }
 .review cite { display: block; margin-top: 12px; font-style: normal; font-weight: 700; }
-.cta { background: var(--grad); border-radius: 32px; padding: 48px 32px; text-align: center; color: #fff; }
+.cta { background: var(--grad); border-radius: 32px; padding: 48px 32px; text-align: center; color: var(--on-grad); }
 .cta h2 { margin-bottom: 12px; }
 .cta p { opacity: .9; margin-bottom: 26px; font-size: 18px; }
 .cta .btn { background: #fff; color: #111; border-color: #fff; }
@@ -81,10 +81,24 @@ nav a:hover { color: var(--text); }
 .contacts dl { display: grid; gap: 16px; }
 .contacts dt { color: var(--muted); font-size: 14px; }
 .contacts dd { font-weight: 700; font-size: 18px; }
-.map { border-radius: 24px; background: var(--grad); min-height: 260px; display: grid; place-items: center; text-align: center; color: #fff; text-decoration: none; font-weight: 700; padding: 20px; }
+.map { border-radius: 24px; background: var(--grad); min-height: 260px; display: grid; place-items: center; text-align: center; color: var(--on-grad); text-decoration: none; font-weight: 700; padding: 20px; }
 .map span { display: block; font-size: 48px; }
 footer { padding: 32px 0 100px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
 footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.hero-art.photo::before, .hero-art.photo::after { display: none; }
+.hero-art.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.gallery.photos { grid-template-columns: repeat(4, 1fr); }
+.g-item.photo { aspect-ratio: 3/4; grid-row: auto; cursor: zoom-in; background: var(--line); }
+.g-item.photo img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+.g-item.photo:hover img { transform: scale(1.05); }
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.9); display: none; align-items: center; justify-content: center; padding: 20px; cursor: zoom-out; }
+.lightbox.on { display: flex; }
+.lightbox img { max-width: 100%; max-height: 100%; border-radius: 16px; }
+.group-note { color: var(--muted); font-size: 14px; margin-top: 10px; }
+.scale-row { align-items: center; }
+.scale-row .size { width: 44px; text-transform: uppercase; }
+.scale-row .bar { flex: 1; height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.scale-row .bar i { display: block; height: 100%; border-radius: 99px; background: var(--grad); }
 .sticky-cta { display: none; }
 .sticky-cta.hide { opacity: 0; pointer-events: none; transform: translateY(20px); }
 .sticky-cta { transition: opacity .25s, transform .25s; }
@@ -94,7 +108,7 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   .hero .wrap { grid-template-columns: 1fr; gap: 32px; }
   .hero-art { aspect-ratio: 16/11; order: -1; }
   section { padding: 52px 0; }
-  .gallery { grid-template-columns: 1fr 1fr; }
+  .gallery, .gallery.photos { grid-template-columns: 1fr 1fr; }
   .contacts { grid-template-columns: 1fr; }
   .sticky-cta { display: flex; position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 30; box-shadow: 0 12px 30px -8px rgba(0,0,0,.45); }
   .top .btn.small { display: none; }
@@ -140,10 +154,7 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
 
 <section id="team"><div class="wrap"><h2>Мастера</h2><div class="team"><div class="member"><div class="avatar">👩🏻</div><b>Анна</b><small>топ-мастер</small></div><div class="member"><div class="avatar">👩🏼‍🦰</div><b>Виктория</b><small>мастер маникюра</small></div><div class="member"><div class="avatar">👩🏻‍🦱</div><b>Ксения</b><small>мастер педикюра</small></div></div></div></section>
 
-<section id="reviews"><div class="wrap">
-  <h2>Отзывы</h2>
-  <div class="reviews"><blockquote class="card review"><div class="stars">★★★★★</div><p>«Покрытие держится уже четвёртую неделю, ни одного скола. Анна — золотые руки!»</p><cite>Екатерина</cite></blockquote><blockquote class="card review"><div class="stars">★★★★★</div><p>«Очень чисто и уютно, инструменты открывают при тебе. Теперь только сюда.»</p><cite>Дарья</cite></blockquote><blockquote class="card review"><div class="stars">★★★★★</div><p>«Сделали дизайн по фото из интернета даже лучше, чем на картинке.»</p><cite>Алина</cite></blockquote></div>
-</div></section>
+<section id="reviews"><div class="wrap"><h2>Отзывы</h2><div class="reviews"><blockquote class="card review"><div class="stars">★★★★★</div><p>«Покрытие держится уже четвёртую неделю, ни одного скола. Анна — золотые руки!»</p><cite>Екатерина</cite></blockquote><blockquote class="card review"><div class="stars">★★★★★</div><p>«Очень чисто и уютно, инструменты открывают при тебе. Теперь только сюда.»</p><cite>Дарья</cite></blockquote><blockquote class="card review"><div class="stars">★★★★★</div><p>«Сделали дизайн по фото из интернета даже лучше, чем на картинке.»</p><cite>Алина</cite></blockquote></div></div></section>
 
 <section><div class="wrap">
   <div class="cta">
@@ -160,19 +171,25 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
       <div><dt>Адрес</dt><dd>Владивосток, ул. Примерная, 25</dd></div>
       <div><dt>Телефон</dt><dd><a href="tel:+79000000000">+7 (900) 000-00-00</a></dd></div>
       <div><dt>Часы работы</dt><dd>Ежедневно 9:00–21:00</dd></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="https://wa.me/79000000000?text=Здравствуйте! Хочу записаться" target="_blank" rel="noopener">WhatsApp</a></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="https://wa.me/79000000000?text=Здравствуйте! Хочу записаться" target="_blank" rel="noopener">Записаться</a></div>
     </dl></div>
     <a class="map" href="https://yandex.ru/maps/?text=Владивосток, ул. Примерная, 25" target="_blank" rel="noopener"><div><span>📍</span>Открыть на Яндекс Картах</div></a>
   </div>
 </div></section>
 
 <footer><div class="wrap"><span>© Мята, Владивосток</span><span>Ежедневно 9:00–21:00</span></div></footer>
+<div class="lightbox" id="lb"><img alt=""></div>
 <a class="btn sticky-cta hide" id="sticky" href="https://wa.me/79000000000?text=Здравствуйте! Хочу записаться" target="_blank" rel="noopener">Записаться</a>
 <script>
 (function () {
   var b = document.getElementById('sticky');
   function u() { b.classList.toggle('hide', window.scrollY < 500 || (innerHeight + scrollY) > document.body.scrollHeight - 200); }
   addEventListener('scroll', u, { passive: true }); u();
+  var lb = document.getElementById('lb');
+  document.querySelectorAll('.g-item.photo img').forEach(function (im) {
+    im.addEventListener('click', function () { lb.firstChild.src = im.src; lb.classList.add('on'); });
+  });
+  lb.addEventListener('click', function () { lb.classList.remove('on'); });
 })();
 </script>
 </body>
