@@ -16,4 +16,6 @@
 
 GitHub → репозиторий → Settings → Pages → Source: «Deploy from a branch» →
 ветка `claude/upbeat-turing-es951x`, папка `/docs` → Save.
-Через 1–2 минуты сайты будут доступны по адресу `https://valerkadz.github.io/1/`.
+Свой домен: `vlsite.ru` (куплен на reg.ru, файл `docs/CNAME`). Сайты: `https://vlsite.ru/`, `https://vlsite.ru/<slug>/`.
+DNS в reg.ru: четыре A-записи `@` → 185.199.108.153 / 109.153 / 110.153 / 111.153 и CNAME `www` → `valerkadz.github.io`.
+Старые адреса `valerkadz.github.io/1/...` автоматически перенаправляются на домен.
