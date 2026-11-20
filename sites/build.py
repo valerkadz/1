@@ -24,7 +24,7 @@ def render(d):
     wa = (f"https://wa.me/{phone_digits}?text=" + e("Здравствуйте! Хочу записаться")) if phone_digits else None
     tg = f"https://t.me/{d['telegram']}" if d.get("telegram") else None
     booking = d.get("booking_url") or wa or tg
-    map_url = "https://yandex.ru/maps/?text=" + e(f"{d['city']}, {d['address']}")
+    map_url = e(d["map_url"]) if d.get("map_url") else "https://yandex.ru/maps/?text=" + e(f"{d['city']}, {d['address']}")
 
     services = ""
     for group in d["services"]:
@@ -70,6 +70,8 @@ def render(d):
     demo = ""
     if d.get("demo"):
         demo = """<div class="demo-bar">Пример сайта. Название, контакты и отзывы вымышлены.</div>"""
+    elif d.get("banner"):
+        demo = f"""<div class="demo-bar">{e(d['banner'])}</div>"""
 
     socials = ""
     if wa and booking != wa:
